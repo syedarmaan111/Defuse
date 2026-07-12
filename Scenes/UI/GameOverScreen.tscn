@@ -1,0 +1,118 @@
+[gd_scene load_steps=8 format=3 uid="uid://defuse_game_over_screen"]
+
+[ext_resource type="Script" path="res://Scripts/UI/game_over_screen.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Play Again Screen.png" id="2_mockup"]
+
+[sub_resource type="Shader" id="Shader_game_over_blur"]
+code = "shader_type canvas_item;
+
+uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_linear_mipmap;
+uniform float blur_lod = 5.0;
+uniform float dim_amount = 0.42;
+
+void fragment() {
+	vec4 sampled_color = textureLod(screen_texture, SCREEN_UV, blur_lod);
+	COLOR = vec4(sampled_color.rgb * dim_amount, 1.0);
+}"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_game_over_blur"]
+shader = SubResource("Shader_game_over_blur")
+shader_parameter/blur_lod = 5.0
+shader_parameter/dim_amount = 0.42
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_game_over_dialog"]
+atlas = ExtResource("2_mockup")
+region = Rect2(224, 406, 576, 806)
+
+[sub_resource type="LabelSettings" id="LabelSettings_score"]
+font_size = 56
+font_color = Color(0.164706, 0.2, 0.207843, 1)
+outline_size = 0
+
+[sub_resource type="LabelSettings" id="LabelSettings_small_title"]
+font_size = 28
+font_color = Color(0.623529, 0.568627, 0.505882, 1)
+outline_size = 0
+
+[node name="GameOverScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="BackBufferCopy" type="BackBufferCopy" parent="."]
+copy_mode = 2
+
+[node name="BlurredGameplay" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_game_over_blur")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 1)
+
+[node name="DialogImage" type="TextureRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+texture = SubResource("AtlasTexture_game_over_dialog")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="YourScoreTitle" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+text = "YOUR SCORE"
+label_settings = SubResource("LabelSettings_small_title")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BestScorePanelMask" type="ColorRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+color = Color(0.968627, 0.94902, 0.913725, 0.98)
+
+[node name="BestScoreTitle" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+text = "BEST SCORE"
+label_settings = SubResource("LabelSettings_small_title")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ScoreLabel" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+text = "0"
+label_settings = SubResource("LabelSettings_score")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BestScoreLabel" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+text = "0"
+label_settings = SubResource("LabelSettings_score")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PlayAgainButton" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+self_modulate = Color(1, 1, 1, 0)
+
+[node name="QuitButton" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+self_modulate = Color(1, 1, 1, 0)

@@ -1,0 +1,45 @@
+[gd_scene load_steps=4 format=3 uid="uid://defuse_home_screen"]
+
+[ext_resource type="Script" path="res://Scripts/UI/home_screen.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Play screen.png" id="2_mockup"]
+[ext_resource type="Texture2D" path="res://Assets/UI/gem_sapphire.svg" id="3_gem"]
+
+[node name="HomeScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.968627, 0.952941, 0.92549, 1)
+
+[node name="MockupBase" type="TextureRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+texture = ExtResource("2_mockup")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GemIconOverlay" type="TextureRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+texture = ExtResource("3_gem")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PlayButton" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+self_modulate = Color(1, 1, 1, 0)

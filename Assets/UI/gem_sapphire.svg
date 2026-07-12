@@ -1,0 +1,37 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="edge" x1="22" y1="20" x2="104" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8ce9ff"/>
+      <stop offset="0.35" stop-color="#1a87e8"/>
+      <stop offset="0.7" stop-color="#0852b8"/>
+      <stop offset="1" stop-color="#052e7d"/>
+    </linearGradient>
+    <linearGradient id="top" x1="32" y1="17" x2="96" y2="63" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#e7fbff"/>
+      <stop offset="0.35" stop-color="#7fdcff"/>
+      <stop offset="1" stop-color="#1676dc"/>
+    </linearGradient>
+    <radialGradient id="shine" cx="42" cy="31" r="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="0.38" stop-color="#bff5ff" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#58b8ff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-20%" y="-10%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="7" stdDeviation="5" flood-color="#102334" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <path d="M24 45L43 19H85L104 45L64 111L24 45Z" fill="#0b4fab" filter="url(#shadow)"/>
+  <path d="M24 45H104L64 111L24 45Z" fill="url(#edge)"/>
+  <path d="M43 19H85L104 45H24L43 19Z" fill="url(#top)"/>
+  <path d="M43 19L54 45H24L43 19Z" fill="#bdf4ff" opacity="0.82"/>
+  <path d="M85 19L74 45H104L85 19Z" fill="#0f61c8" opacity="0.9"/>
+  <path d="M54 45L64 111L24 45H54Z" fill="#0a42a1" opacity="0.62"/>
+  <path d="M74 45L64 111L104 45H74Z" fill="#043284" opacity="0.65"/>
+  <path d="M54 45H74L64 111L54 45Z" fill="#25a9ff" opacity="0.72"/>
+  <path d="M54 45L64 19L74 45H54Z" fill="#d9fbff" opacity="0.65"/>
+  <path d="M31 45H97" stroke="#ecffff" stroke-opacity="0.55" stroke-width="3"/>
+  <path d="M43 19L54 45L64 19L74 45L85 19" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="2"/>
+  <ellipse cx="46" cy="35" rx="21" ry="16" fill="url(#shine)"/>
+  <path d="M38 29L45 24L52 29L45 34L38 29Z" fill="#ffffff" opacity="0.88"/>
+  <path d="M70 55L82 49L76 63" fill="#ffffff" opacity="0.28"/>
+</svg>

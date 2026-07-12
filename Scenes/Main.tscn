@@ -1,0 +1,26 @@
+[gd_scene load_steps=6 format=3 uid="uid://defuse_main_scene"]
+
+[ext_resource type="Script" path="res://Scripts/main.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/HomeScreen.tscn" id="1_home"]
+[ext_resource type="PackedScene" path="res://Scenes/Gameplay/Gameplay.tscn" id="2_gameplay"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/PauseMenu.tscn" id="3_pause"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/GameOverScreen.tscn" id="4_gameover"]
+
+[node name="Main" type="Node"]
+script = ExtResource("1_script")
+
+[node name="ScreenRoot" type="CanvasLayer" parent="."]
+
+[node name="HomeScreen" parent="ScreenRoot" instance=ExtResource("1_home")]
+
+[node name="Gameplay" parent="ScreenRoot" instance=ExtResource("2_gameplay")]
+visible = false
+
+[node name="OverlayRoot" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="PauseMenu" parent="OverlayRoot" instance=ExtResource("3_pause")]
+visible = false
+
+[node name="GameOverScreen" parent="OverlayRoot" instance=ExtResource("4_gameover")]
+visible = false
