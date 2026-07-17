@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dha16j8elrj7b"
-path="res://.godot/imported/bomb_reference.png-33b0d1d42fa8d1e25c122d2947749fc4.ctex"
+uid="uid://3muf8pv2268t"
+path="res://.godot/imported/3x3 grid.png-112e6ae3a45c0e3232073871db7ede04.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Bomb/bomb_reference.png"
-dest_files=["res://.godot/imported/bomb_reference.png-33b0d1d42fa8d1e25c122d2947749fc4.ctex"]
+source_file="res://Assets/UI/UI mockups/3x3 grid.png"
+dest_files=["res://.godot/imported/3x3 grid.png-112e6ae3a45c0e3232073871db7ede04.ctex"]
 
 [params]
 
@@ -23,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

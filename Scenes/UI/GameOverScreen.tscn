@@ -1,38 +1,18 @@
 [gd_scene load_steps=8 format=3 uid="uid://defuse_game_over_screen"]
 
 [ext_resource type="Script" path="res://Scripts/UI/game_over_screen.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://Assets/UI/Play Again Screen.png" id="2_mockup"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/PopupPanel.tscn" id="2_popup"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/PrimaryButton.tscn" id="3_primary"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/SecondaryButton.tscn" id="4_secondary"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/DangerButton.tscn" id="5_danger"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/BannerAdSlot.tscn" id="6_banner"]
 
-[sub_resource type="Shader" id="Shader_game_over_blur"]
-code = "shader_type canvas_item;
-
-uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_linear_mipmap;
-uniform float blur_lod = 5.0;
-uniform float dim_amount = 0.42;
-
-void fragment() {
-	vec4 sampled_color = textureLod(screen_texture, SCREEN_UV, blur_lod);
-	COLOR = vec4(sampled_color.rgb * dim_amount, 1.0);
-}"
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_game_over_blur"]
-shader = SubResource("Shader_game_over_blur")
-shader_parameter/blur_lod = 5.0
-shader_parameter/dim_amount = 0.42
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_game_over_dialog"]
-atlas = ExtResource("2_mockup")
-region = Rect2(224, 406, 576, 806)
-
-[sub_resource type="LabelSettings" id="LabelSettings_score"]
-font_size = 56
-font_color = Color(0.164706, 0.2, 0.207843, 1)
-outline_size = 0
-
-[sub_resource type="LabelSettings" id="LabelSettings_small_title"]
-font_size = 28
-font_color = Color(0.623529, 0.568627, 0.505882, 1)
-outline_size = 0
+[sub_resource type="StyleBoxFlat" id="StyleBox_score"]
+bg_color = Color(0.92549, 0.878431, 0.807843, 1)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
 
 [node name="GameOverScreen" type="Control"]
 layout_mode = 3
@@ -43,11 +23,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_script")
 
-[node name="BackBufferCopy" type="BackBufferCopy" parent="."]
-copy_mode = 2
-
-[node name="BlurredGameplay" type="ColorRect" parent="."]
-material = SubResource("ShaderMaterial_game_over_blur")
+[node name="Dim" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -55,64 +31,96 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(1, 1, 1, 1)
+color = Color(0.08, 0.1, 0.1, 0.62)
 
-[node name="DialogImage" type="TextureRect" parent="."]
-unique_name_in_owner = true
+[node name="BannerAdSlot" parent="." instance=ExtResource("6_banner")]
 layout_mode = 1
-texture = SubResource("AtlasTexture_game_over_dialog")
-expand_mode = 1
-stretch_mode = 5
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 48.0
+offset_top = 38.0
+offset_right = -48.0
+offset_bottom = 206.0
+grow_horizontal = 2
 
-[node name="YourScoreTitle" type="Label" parent="."]
-unique_name_in_owner = true
+[node name="CenterMargins" type="MarginContainer" parent="."]
 layout_mode = 1
-text = "YOUR SCORE"
-label_settings = SubResource("LabelSettings_small_title")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 224
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 42
+
+[node name="Center" type="CenterContainer" parent="CenterMargins"]
+layout_mode = 2
+
+[node name="Popup" parent="CenterMargins/Center" instance=ExtResource("2_popup")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(440, 0)
+layout_mode = 2
+
+[node name="Content" type="VBoxContainer" parent="CenterMargins/Center/Popup"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="CenterMargins/Center/Popup/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.156863, 0.188235, 0.2, 1)
+theme_override_font_sizes/font_size = 42
+text = "☠\nGAME OVER"
 horizontal_alignment = 1
-vertical_alignment = 1
 
-[node name="BestScorePanelMask" type="ColorRect" parent="."]
-unique_name_in_owner = true
-layout_mode = 1
-color = Color(0.968627, 0.94902, 0.913725, 0.98)
+[node name="YourScore" type="Label" parent="CenterMargins/Center/Popup/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.4, 0.34, 1)
+theme_override_font_sizes/font_size = 21
+text = "SCORE"
+horizontal_alignment = 1
 
-[node name="BestScoreTitle" type="Label" parent="."]
+[node name="ScoreLabel" type="Label" parent="CenterMargins/Center/Popup/Content"]
 unique_name_in_owner = true
-layout_mode = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(0.156863, 0.188235, 0.2, 1)
+theme_override_font_sizes/font_size = 64
+text = "0"
+horizontal_alignment = 1
+
+[node name="BestScore" type="PanelContainer" parent="CenterMargins/Center/Popup/Content"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_score")
+
+[node name="Box" type="VBoxContainer" parent="CenterMargins/Center/Popup/Content/BestScore"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="CenterMargins/Center/Popup/Content/BestScore/Box"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.4, 0.34, 1)
+theme_override_font_sizes/font_size = 18
 text = "BEST SCORE"
-label_settings = SubResource("LabelSettings_small_title")
 horizontal_alignment = 1
-vertical_alignment = 1
 
-[node name="ScoreLabel" type="Label" parent="."]
+[node name="BestScoreLabel" type="Label" parent="CenterMargins/Center/Popup/Content/BestScore/Box"]
 unique_name_in_owner = true
-layout_mode = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(0.156863, 0.188235, 0.2, 1)
+theme_override_font_sizes/font_size = 37
 text = "0"
-label_settings = SubResource("LabelSettings_score")
 horizontal_alignment = 1
-vertical_alignment = 1
 
-[node name="BestScoreLabel" type="Label" parent="."]
-unique_name_in_owner = true
-layout_mode = 1
-text = "0"
-label_settings = SubResource("LabelSettings_score")
-horizontal_alignment = 1
-vertical_alignment = 1
+[node name="ButtonGap" type="Control" parent="CenterMargins/Center/Popup/Content"]
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
 
-[node name="PlayAgainButton" type="Button" parent="."]
+[node name="PlayAgainButton" parent="CenterMargins/Center/Popup/Content" instance=ExtResource("4_secondary")]
 unique_name_in_owner = true
-layout_mode = 1
-focus_mode = 0
-mouse_default_cursor_shape = 2
-flat = true
-self_modulate = Color(1, 1, 1, 0)
+layout_mode = 2
+text = "▶   PLAY AGAIN"
 
-[node name="QuitButton" type="Button" parent="."]
+[node name="QuitButton" parent="CenterMargins/Center/Popup/Content" instance=ExtResource("5_danger")]
 unique_name_in_owner = true
-layout_mode = 1
-focus_mode = 0
-mouse_default_cursor_shape = 2
-flat = true
-self_modulate = Color(1, 1, 1, 0)
+layout_mode = 2
+text = "⇥   QUIT"

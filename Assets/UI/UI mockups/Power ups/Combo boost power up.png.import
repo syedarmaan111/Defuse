@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dha16j8elrj7b"
-path="res://.godot/imported/bomb_reference.png-33b0d1d42fa8d1e25c122d2947749fc4.ctex"
+uid="uid://c7qa6jdooddq8"
+path="res://.godot/imported/Combo boost power up.png-91da28775b8bc6cf7efa3628a11527fd.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Bomb/bomb_reference.png"
-dest_files=["res://.godot/imported/bomb_reference.png-33b0d1d42fa8d1e25c122d2947749fc4.ctex"]
+source_file="res://Assets/UI/UI mockups/Power ups/Combo boost power up.png"
+dest_files=["res://.godot/imported/Combo boost power up.png-91da28775b8bc6cf7efa3628a11527fd.ctex"]
 
 [params]
 
@@ -23,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

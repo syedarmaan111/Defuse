@@ -1,28 +1,23 @@
-[gd_scene load_steps=6 format=3 uid="uid://defuse_pause_menu"]
+[gd_scene load_steps=10 format=3 uid="uid://defuse_pause_menu"]
 
 [ext_resource type="Script" path="res://Scripts/UI/pause_menu.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://Assets/UI/Pause Screen.png" id="2_mockup"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/PopupPanel.tscn" id="2_popup"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/PrimaryButton.tscn" id="3_primary"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/SecondaryButton.tscn" id="4_secondary"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/DangerButton.tscn" id="5_danger"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/BannerAdSlot.tscn" id="6_banner"]
 
 [sub_resource type="Shader" id="Shader_pause_blur"]
 code = "shader_type canvas_item;
 
 uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_linear_mipmap;
-uniform float blur_lod = 5.0;
-uniform float dim_amount = 0.42;
-
 void fragment() {
-	vec4 sampled_color = textureLod(screen_texture, SCREEN_UV, blur_lod);
-	COLOR = vec4(sampled_color.rgb * dim_amount, 1.0);
+	vec4 sampled_color = textureLod(screen_texture, SCREEN_UV, 5.0);
+	COLOR = vec4(sampled_color.rgb * 0.58, 1.0);
 }"
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_pause_blur"]
 shader = SubResource("Shader_pause_blur")
-shader_parameter/blur_lod = 5.0
-shader_parameter/dim_amount = 0.42
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_pause_dialog"]
-atlas = ExtResource("2_mockup")
-region = Rect2(260, 665, 504, 494)
 
 [node name="PauseMenu" type="Control"]
 layout_mode = 3
@@ -45,27 +40,67 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(1, 1, 1, 1)
+color = Color(0.08, 0.1, 0.1, 0.56)
 
-[node name="DialogImage" type="TextureRect" parent="."]
-unique_name_in_owner = true
+[node name="BannerAdSlot" parent="." instance=ExtResource("6_banner")]
 layout_mode = 1
-texture = SubResource("AtlasTexture_pause_dialog")
-expand_mode = 1
-stretch_mode = 5
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 48.0
+offset_top = 38.0
+offset_right = -48.0
+offset_bottom = 206.0
+grow_horizontal = 2
 
-[node name="ResumeButton" type="Button" parent="."]
-unique_name_in_owner = true
+[node name="CenterMargins" type="MarginContainer" parent="."]
 layout_mode = 1
-focus_mode = 0
-mouse_default_cursor_shape = 2
-flat = true
-self_modulate = Color(1, 1, 1, 0)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 224
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 42
 
-[node name="QuitButton" type="Button" parent="."]
+[node name="Center" type="CenterContainer" parent="CenterMargins"]
+layout_mode = 2
+
+[node name="Popup" parent="CenterMargins/Center" instance=ExtResource("2_popup")]
 unique_name_in_owner = true
-layout_mode = 1
-focus_mode = 0
-mouse_default_cursor_shape = 2
-flat = true
-self_modulate = Color(1, 1, 1, 0)
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+
+[node name="Content" type="VBoxContainer" parent="CenterMargins/Center/Popup"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="CenterMargins/Center/Popup/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.156863, 0.188235, 0.2, 1)
+theme_override_font_sizes/font_size = 42
+text = "PAUSED"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="CenterMargins/Center/Popup/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.37, 0.33, 1)
+theme_override_font_sizes/font_size = 20
+text = "★  ───  ★"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="ButtonGap" type="Control" parent="CenterMargins/Center/Popup/Content"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+
+[node name="ResumeButton" parent="CenterMargins/Center/Popup/Content" instance=ExtResource("3_primary")]
+unique_name_in_owner = true
+layout_mode = 2
+text = "▶   RESUME"
+
+[node name="QuitButton" parent="CenterMargins/Center/Popup/Content" instance=ExtResource("5_danger")]
+unique_name_in_owner = true
+layout_mode = 2
+text = "⇥   QUIT"

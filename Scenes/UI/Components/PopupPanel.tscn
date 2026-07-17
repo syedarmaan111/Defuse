@@ -1,0 +1,19 @@
+[gd_scene load_steps=2 format=3]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_panel"]
+bg_color = Color(0.968627, 0.94902, 0.913725, 1)
+corner_radius_top_left = 34
+corner_radius_top_right = 34
+corner_radius_bottom_right = 34
+corner_radius_bottom_left = 34
+shadow_color = Color(0.05, 0.06, 0.06, 0.3)
+shadow_size = 24
+shadow_offset = Vector2(0, 12)
+content_margin_left = 34.0
+content_margin_top = 34.0
+content_margin_right = 34.0
+content_margin_bottom = 34.0
+
+[node name="PopupPanel" type="PanelContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_panel")

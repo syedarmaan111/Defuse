@@ -1,0 +1,70 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/animated_button.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_normal"]
+bg_color = Color(0.968627, 0.94902, 0.913725, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 7
+border_color = Color(0.28, 0.3, 0.3, 0.4)
+shadow_color = Color(0.1, 0.1, 0.1, 0.2)
+shadow_size = 10
+shadow_offset = Vector2(0, 7)
+anti_aliasing_size = 1.5
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_hover"]
+bg_color = Color(1, 0.985, 0.955, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 7
+border_color = Color(0.24, 0.27, 0.28, 0.45)
+shadow_color = Color(0.1, 0.1, 0.1, 0.23)
+shadow_size = 12
+shadow_offset = Vector2(0, 8)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_pressed"]
+bg_color = Color(0.9, 0.87, 0.82, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+border_width_left = 2
+border_width_top = 4
+border_width_right = 2
+border_width_bottom = 3
+border_color = Color(0.28, 0.3, 0.3, 0.42)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_disabled"]
+bg_color = Color(0.84, 0.82, 0.78, 0.75)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[node name="SecondaryButton" type="Button"]
+custom_minimum_size = Vector2(0, 74)
+layout_mode = 0
+focus_mode = 0
+theme_override_colors/font_color = Color(0.156863, 0.188235, 0.2, 1)
+theme_override_colors/font_hover_color = Color(0.1, 0.13, 0.14, 1)
+theme_override_colors/font_pressed_color = Color(0.2, 0.22, 0.22, 1)
+theme_override_colors/font_outline_color = Color(1, 1, 1, 0.7)
+theme_override_font_sizes/font_size = 23
+theme_override_constants/outline_size = 1
+theme_override_constants/shadow_offset_y = 2
+theme_override_styles/normal = SubResource("StyleBox_normal")
+theme_override_styles/pressed = SubResource("StyleBox_pressed")
+theme_override_styles/hover = SubResource("StyleBox_hover")
+theme_override_styles/disabled = SubResource("StyleBox_disabled")
+script = ExtResource("1_script")
