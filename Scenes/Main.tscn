@@ -1,10 +1,13 @@
-[gd_scene load_steps=6 format=3 uid="uid://defuse_main_scene"]
+[gd_scene load_steps=9 format=3 uid="uid://defuse_main_scene"]
 
 [ext_resource type="Script" path="res://Scripts/main.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/HomeScreen.tscn" id="1_home"]
 [ext_resource type="PackedScene" path="res://Scenes/Gameplay/Gameplay.tscn" id="2_gameplay"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/PauseMenu.tscn" id="3_pause"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/GameOverScreen.tscn" id="4_gameover"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/NetworkRequiredScreen.tscn" id="5_network"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/SignInScreen.tscn" id="6_signin"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/ConnectionStatusOverlay.tscn" id="7_connection"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_script")
@@ -12,8 +15,15 @@ script = ExtResource("1_script")
 [node name="ScreenRoot" type="CanvasLayer" parent="."]
 
 [node name="HomeScreen" parent="ScreenRoot" instance=ExtResource("1_home")]
+visible = false
 
 [node name="Gameplay" parent="ScreenRoot" instance=ExtResource("2_gameplay")]
+visible = false
+
+[node name="NetworkRequiredScreen" parent="ScreenRoot" instance=ExtResource("5_network")]
+visible = false
+
+[node name="SignInScreen" parent="ScreenRoot" instance=ExtResource("6_signin")]
 visible = false
 
 [node name="OverlayRoot" type="CanvasLayer" parent="."]
@@ -24,3 +34,8 @@ visible = false
 
 [node name="GameOverScreen" parent="OverlayRoot" instance=ExtResource("4_gameover")]
 visible = false
+
+[node name="NotificationRoot" type="CanvasLayer" parent="."]
+layer = 20
+
+[node name="ConnectionStatusOverlay" parent="NotificationRoot" instance=ExtResource("7_connection")]

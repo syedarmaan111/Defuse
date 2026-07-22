@@ -1,0 +1,123 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/sign_in_screen.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/PrimaryButton.tscn" id="2_primary"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_card"]
+bg_color = Color(0.968627, 0.94902, 0.913725, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 7
+border_color = Color(0.31, 0.3, 0.27, 0.35)
+corner_radius_top_left = 34
+corner_radius_top_right = 34
+corner_radius_bottom_right = 34
+corner_radius_bottom_left = 34
+shadow_color = Color(0.08, 0.09, 0.09, 0.22)
+shadow_size = 16
+shadow_offset = Vector2(0, 10)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_badge"]
+bg_color = Color(0.43, 0.48, 0.5, 1)
+corner_radius_top_left = 54
+corner_radius_top_right = 54
+corner_radius_bottom_right = 54
+corner_radius_bottom_left = 54
+
+[node name="SignInScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.968627, 0.952941, 0.92549, 1)
+
+[node name="SafeMargins" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 64
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 64
+
+[node name="Center" type="CenterContainer" parent="SafeMargins"]
+layout_mode = 2
+
+[node name="Card" type="PanelContainer" parent="SafeMargins/Center"]
+custom_minimum_size = Vector2(0, 620)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBox_card")
+
+[node name="Margins" type="MarginContainer" parent="SafeMargins/Center/Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 56
+theme_override_constants/margin_top = 56
+theme_override_constants/margin_right = 56
+theme_override_constants/margin_bottom = 56
+
+[node name="Content" type="VBoxContainer" parent="SafeMargins/Center/Card/Margins"]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="BadgeCenter" type="CenterContainer" parent="SafeMargins/Center/Card/Margins/Content"]
+layout_mode = 2
+
+[node name="Badge" type="PanelContainer" parent="SafeMargins/Center/Card/Margins/Content/BadgeCenter"]
+custom_minimum_size = Vector2(108, 108)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_badge")
+
+[node name="Icon" type="Label" parent="SafeMargins/Center/Card/Margins/Content/BadgeCenter/Badge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.968627, 0.94902, 0.913725, 1)
+theme_override_font_sizes/font_size = 44
+text = "▶"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Title" type="Label" parent="SafeMargins/Center/Card/Margins/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.13, 0.16, 0.17, 1)
+theme_override_font_sizes/font_size = 43
+text = "PLAY GAMES SIGN-IN"
+horizontal_alignment = 1
+
+[node name="Body" type="Label" parent="SafeMargins/Center/Card/Margins/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.32, 0.32, 1)
+theme_override_font_sizes/font_size = 25
+text = "Sign in with Google Play Games to restore your DEFUSE progress and keep future rewards protected."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="StatusLabel" type="Label" parent="SafeMargins/Center/Card/Margins/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.37, 0.39, 0.39, 1)
+theme_override_font_sizes/font_size = 21
+text = "Checking your Play Games profile…"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="SignInButton" parent="SafeMargins/Center/Card/Margins/Content" instance=ExtResource("2_primary")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 92)
+layout_mode = 2
+text = "SIGN IN"

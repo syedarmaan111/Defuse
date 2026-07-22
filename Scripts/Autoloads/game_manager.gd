@@ -9,6 +9,8 @@ signal screen_changed(screen_name: String)
 signal game_over_requested(final_score: int, best_score: int)
 
 enum ScreenName {
+	NETWORK_REQUIRED,
+	SIGN_IN,
 	HOME,
 	GAMEPLAY,
 	PAUSE,
@@ -34,8 +36,14 @@ func get_current_screen_name() -> String:
 
 
 func start_game() -> void:
-	## Starts the UI run shell from Home or Play Again.
+	## Starts the UI run shell only after online launch requirements are satisfied.
 	## This does not create bombs, timers, score rules, or difficulty.
+	if not NetworkManager.can_start_game():
+		set_current_screen(ScreenName.NETWORK_REQUIRED)
+		return
+	if not CloudSaveManager.is_gate_satisfied():
+		set_current_screen(ScreenName.SIGN_IN)
+		return
 	current_score = 0
 	set_current_screen(ScreenName.GAMEPLAY)
 
@@ -55,10 +63,20 @@ func resume_game() -> void:
 
 
 func return_to_home() -> void:
-	## Leaves any run-related UI and shows Home.
+	## Leaves run UI and re-applies the online launch gate before showing Home.
 	## Pause Quit and Game Over Quit both use this path.
 	current_score = 0
-	set_current_screen(ScreenName.HOME)
+	show_home_if_ready()
+
+
+func show_home_if_ready() -> void:
+	## Selects the first unmet launch requirement, or Home when both pass.
+	if not NetworkManager.can_start_game():
+		set_current_screen(ScreenName.NETWORK_REQUIRED)
+	elif not CloudSaveManager.is_gate_satisfied():
+		set_current_screen(ScreenName.SIGN_IN)
+	else:
+		set_current_screen(ScreenName.HOME)
 
 
 func show_game_over(final_score: int = 0) -> void:

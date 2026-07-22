@@ -1,0 +1,49 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/connection_status_overlay.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_banner"]
+bg_color = Color(0.145, 0.176, 0.188, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 5
+border_color = Color(0.055, 0.071, 0.078, 0.7)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0.04, 0.05, 0.055, 0.28)
+shadow_size = 10
+shadow_offset = Vector2(0, 7)
+
+[node name="ConnectionStatusOverlay" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="Banner" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 64.0
+offset_top = 54.0
+offset_right = -64.0
+offset_bottom = 132.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBox_banner")
+
+[node name="MessageLabel" type="Label" parent="Banner"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.968627, 0.94902, 0.913725, 1)
+theme_override_font_sizes/font_size = 20
+text = "CONNECTION LOST  •  THIS RUN CAN FINISH"
+horizontal_alignment = 1
+vertical_alignment = 1

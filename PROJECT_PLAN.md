@@ -74,11 +74,15 @@ Scenes/UI/
 
 ## Online, Sign-In, and Cloud Save Requirements
 
-### Wi-Fi Gate
+Implementation note: the online launch gate is temporarily disabled through
+`defuse/online_gate/enabled=false` while the base game is built. Its code and
+automated regression coverage remain in place for later Android device testing.
 
-- Validated Wi-Fi internet is mandatory before the game can restore progression or start a new run. Cellular data alone is insufficient.
-- Use an Android `ConnectivityManager` bridge to verify active Wi-Fi transport and validated internet; a Wi-Fi SSID or captive portal alone is not enough.
-- If Wi-Fi disconnects during a live run, allow that run to finish. Block restarting, new runs, commerce, restore purchases, and other online-only actions until validated Wi-Fi returns.
+### Internet Connection Gate
+
+- An Android network reporting validated internet access is required before the game restores progression or starts a new run. Both Wi-Fi and cellular data are supported.
+- Use an Android `ConnectivityManager` bridge to inspect the active network. If the bridge itself is unavailable, fail closed so an integration problem cannot bypass the online-only launch requirement.
+- If internet disconnects during a live run, allow that run to finish. Block restarting, new runs, commerce, restore purchases, and other online-only actions until internet returns.
 - `NetworkRequiredScreen` provides Retry; `ConnectionStatusOverlay` tells the player that the live run can finish; a notification confirms reconnection.
 
 ### Google Play Games Saved Games
@@ -96,7 +100,7 @@ Scenes/UI/
 ```text
 NetworkManager
   is_wifi_connected() -> bool
-  has_validated_internet() -> bool
+  has_internet_access() -> bool
   can_start_game() -> bool
   refresh_connection_state()
 
@@ -112,7 +116,7 @@ Required signals:
 
 ```text
 wifi_connection_changed(is_connected)
-internet_validation_changed(is_valid)
+internet_availability_changed(is_available)
 gameplay_connection_lost()
 gameplay_connection_restored()
 cloud_sign_in_succeeded()
@@ -299,7 +303,7 @@ Bombs guard against double resolution. Bomb explosion is local; neighboring bomb
 - Reserve a safe-area banner slot that never covers gameplay or controls.
 - Attempt an interstitial after every fourth completed run.
 - Atomically persist `completed_run_count` and `pending_interstitial` before Game Over controls appear.
-- If an interstitial is due while offline, retain one pending opportunity. On Wi-Fi reconnection, attempt it before the next run.
+- If an interstitial is due while offline, retain one pending opportunity. On internet reconnection, attempt it before the next run.
 - After one normal no-fill/failure, clear the pending flag and allow play; never create an infinite retry block.
 - Rewarded revive is unavailable offline and proceeds directly to normal Game Over.
 - Never count an offline/failed request as an impression or reward.
@@ -309,7 +313,7 @@ Bombs guard against double resolution. Bomb explosion is local; neighboring bomb
 
 1. **Plan Consolidation and Baseline Verification** — Verify current navigation and record existing code as partial/unverified.
 2. **Responsive UI Foundation Refactor** — Replace mockup-image/fixed-coordinate UI with reusable safe-area-aware Control layouts and shared animation/theme components.
-3. **Wi-Fi Gate and Google Play Games Sign-In** — Add native connectivity bridge, connection UI, mandatory sign-in, and launch gating.
+3. **Internet Gate and Google Play Games Sign-In** — Add native connectivity bridge, connection UI, mandatory sign-in, and launch gating.
 4. **Versioned Local/Cloud Save Foundation** — Add migration, cloud restore/sync, conflict dialog, sync queue, and uninstall/reinstall recovery validation.
 5. **Content Catalog and Progression Managers** — Add Resource definitions, catalog, save ownership model, and managers.
 6. **Navigation and Profile** — Add Home/Shop/Profile navigation and basic Profile data presentation.
@@ -327,7 +331,7 @@ Bombs guard against double resolution. Bomb explosion is local; neighboring bomb
 - Fresh install and legacy-save migration yield `default_bomb` owned/equipped/selected.
 - Same Google Play Games account restores Gems, scores, settings, ownership, and pending choices after uninstall/reinstall.
 - Cloud conflict always prompts for a choice rather than silently losing state.
-- New runs are blocked without validated Wi-Fi; active runs can finish after disconnect.
+- New runs are blocked without validated internet; active runs can finish after disconnect.
 - UI works on small phone, large phone, tablet, cutout, and varying portrait aspect ratios.
 - New catalog Resources render in Shop without per-item UI code/layout changes.
 - No UI contains a mockup screenshot as the implemented screen.

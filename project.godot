@@ -17,9 +17,18 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+NetworkManager="*res://Scripts/Autoloads/network_manager.gd"
+CloudSaveManager="*res://Scripts/Autoloads/cloud_save_manager.gd"
 GameManager="*res://Scripts/Autoloads/game_manager.gd"
 SaveManager="*res://Scripts/Autoloads/save_manager.gd"
 AudioManager="*res://Scripts/Autoloads/audio_manager.gd"
+GodotPlayGameServices="*uid://okgap0vbtm6"
+
+[defuse]
+
+development/bypass_online_gate=false
+online_gate/enabled=false
+play_games/require_sign_in=false
 
 [display]
 
@@ -28,6 +37,10 @@ window/size/viewport_height=1536
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/handheld/orientation=1
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/GodotPlayGameServices/plugin.cfg", "res://addons/defuse_android_gate/plugin.cfg")
 
 [physics]
 
@@ -38,3 +51,4 @@ window/handheld/orientation=1
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true
