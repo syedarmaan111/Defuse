@@ -122,6 +122,18 @@ func set_best_score(value: int) -> void:
 	_commit_local_change()
 
 
+func get_lifetime_defusals() -> int:
+	return _data.lifetime_defusal_score
+
+
+func add_lifetime_defusals(amount: int = 1) -> bool:
+	if amount <= 0:
+		return false
+	_data.lifetime_defusal_score += amount
+	_commit_local_change()
+	return true
+
+
 func get_total_gems() -> int:
 	return int(_data.currencies.get("gems", 0))
 
@@ -199,6 +211,14 @@ func get_unlocked_power_up_ids() -> Array[String]:
 	return _data.unlocked_powerup_ids.duplicate()
 
 
+func get_claimed_power_up_checkpoints() -> Array[int]:
+	return _data.claimed_powerup_checkpoints.duplicate()
+
+
+func get_pending_power_up_unlock_choices() -> int:
+	return _data.pending_powerup_unlock_choices
+
+
 func get_power_up_quantity(power_up_id: String) -> int:
 	return int(_data.owned_power_up_quantities.get(power_up_id, 0))
 
@@ -217,6 +237,52 @@ func grant_power_up(power_up_id: String, quantity: int = 0) -> bool:
 		changed = true
 	if not changed:
 		return false
+	_commit_local_change()
+	return true
+
+
+func grant_power_ups(power_up_ids: Array[String]) -> bool:
+	## Grants a checkpoint batch in one save revision and one cloud-sync update.
+	var changed := false
+	for power_up_id in power_up_ids:
+		var safe_id := power_up_id.strip_edges()
+		if safe_id.is_empty() or _data.unlocked_powerup_ids.has(safe_id):
+			continue
+		_data.unlocked_powerup_ids.append(safe_id)
+		changed = true
+	if not changed:
+		return false
+	_commit_local_change()
+	return true
+
+
+func queue_power_up_unlock_choices(checkpoints: Array[int]) -> int:
+	## Marks newly reached lifetime checkpoints and persists their choices once.
+	var added_count := 0
+	for checkpoint in checkpoints:
+		if checkpoint <= 0 or _data.claimed_powerup_checkpoints.has(checkpoint):
+			continue
+		_data.claimed_powerup_checkpoints.append(checkpoint)
+		added_count += 1
+	if added_count == 0:
+		return 0
+	_data.claimed_powerup_checkpoints.sort()
+	_data.pending_powerup_unlock_choices += added_count
+	_commit_local_change()
+	return added_count
+
+
+func claim_power_up_unlock_choice(power_up_id: String) -> bool:
+	## Unlocks one choice and consumes one queued checkpoint in one revision.
+	var safe_id := power_up_id.strip_edges()
+	if (
+		safe_id.is_empty()
+		or _data.pending_powerup_unlock_choices <= 0
+		or _data.unlocked_powerup_ids.has(safe_id)
+	):
+		return false
+	_data.unlocked_powerup_ids.append(safe_id)
+	_data.pending_powerup_unlock_choices -= 1
 	_commit_local_change()
 	return true
 

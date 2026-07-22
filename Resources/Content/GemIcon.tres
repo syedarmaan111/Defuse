@@ -1,0 +1,7 @@
+[gd_resource type="AtlasTexture" load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://Assets/UI/gem icon.png" id="1_gem_source"]
+
+[resource]
+atlas = ExtResource("1_gem_source")
+region = Rect2(192, 470, 640, 640)

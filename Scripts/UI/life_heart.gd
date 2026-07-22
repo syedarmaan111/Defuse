@@ -13,12 +13,34 @@ class_name LifeHeart
 @export var empty_color := Color(0.72, 0.68, 0.63, 0.32)
 @export var outline_color := Color(0.31, 0.13, 0.12, 0.92)
 
+var _restore_tween: Tween
+
 
 func _ready() -> void:
 	custom_minimum_size = Vector2(54.0, 48.0)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	resized.connect(queue_redraw)
+	resized.connect(_refresh_pivot)
 	queue_redraw()
+	call_deferred("_refresh_pivot")
+
+
+func play_restore() -> void:
+	filled = true
+	if _restore_tween != null and _restore_tween.is_valid():
+		_restore_tween.kill()
+	pivot_offset = size * 0.5
+	scale = Vector2.ONE * 0.2
+	modulate = Color(0.45, 1.0, 0.58, 0.25)
+	_restore_tween = create_tween().set_parallel(true)
+	_restore_tween.tween_property(self, "scale", Vector2.ONE, 0.42).set_trans(
+		Tween.TRANS_BACK
+	).set_ease(Tween.EASE_OUT)
+	_restore_tween.tween_property(self, "modulate", Color.WHITE, 0.34)
+
+
+func _refresh_pivot() -> void:
+	pivot_offset = size * 0.5
 
 
 func _draw() -> void:

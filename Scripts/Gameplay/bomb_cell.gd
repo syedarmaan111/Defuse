@@ -15,14 +15,20 @@ const BOMB_CROP_REGION := Rect2(250.0, 180.0, 560.0, 750.0)
 static var _frame_textures: Dictionary = {}
 
 @onready var explosion_flash: Panel = %ExplosionFlash
+@onready var scan_glow: Panel = %ScanGlow
 @onready var bomb_image: TextureRect = %BombImage
 @onready var touch_target: Button = %TouchTarget
+@onready var reward_badge: Control = %RewardBadge
 
 var bomb_index := -1
 var is_active := false
 var timer_ratio := 0.0
 var _base_visual_scale := 1.0
+var _is_scanned := false
+var _scan_mode_active := false
+var _slow_motion_active := false
 var _effect_tween: Tween
+var _scan_pulse_tween: Tween
 
 
 func _ready() -> void:
@@ -46,6 +52,34 @@ func set_grid_side(grid_side: int) -> void:
 	_base_visual_scale = 1.16 if grid_side == 4 else 1.0
 	if _effect_tween == null:
 		bomb_image.scale = Vector2.ONE * _base_visual_scale
+
+
+func set_reward(
+	reward_type: String,
+	reward_id: String,
+	display_name: String,
+	reward_amount: int = 1
+) -> void:
+	reward_badge.show_reward(reward_type, reward_id, display_name, reward_amount)
+
+
+func clear_reward() -> void:
+	reward_badge.clear_reward()
+
+
+func set_scanned(is_scanned: bool) -> void:
+	_is_scanned = is_scanned
+	_refresh_power_up_visuals()
+
+
+func set_scan_mode(is_active: bool) -> void:
+	_scan_mode_active = is_active
+	_refresh_power_up_visuals()
+
+
+func set_slow_motion(is_active: bool) -> void:
+	_slow_motion_active = is_active
+	_refresh_power_up_visuals()
 
 
 func set_timer(remaining_seconds: float, duration_seconds: float) -> void:
@@ -85,6 +119,16 @@ func play_explosion() -> void:
 	_effect_tween.tween_callback(_finish_effect)
 
 
+func play_protection() -> void:
+	_cancel_effect()
+	touch_target.disabled = true
+	explosion_flash.visible = true
+	explosion_flash.self_modulate = Color(0.25, 0.68, 1.0)
+	_effect_tween = create_tween()
+	_effect_tween.tween_method(_render_protection_effect, 0.0, 1.0, 0.38)
+	_effect_tween.tween_callback(_finish_effect)
+
+
 func _apply_state(active: bool, animate: bool) -> void:
 	var became_active := active and not is_active
 	is_active = active
@@ -104,6 +148,7 @@ func _apply_state(active: bool, animate: bool) -> void:
 	)
 	if not is_active and _effect_tween == null:
 		_reset_inactive_visuals()
+	_refresh_power_up_visuals()
 	if animate and became_active:
 		scale = Vector2.ONE * 0.94
 		create_tween().tween_property(self, "scale", Vector2.ONE, 0.12).set_trans(
@@ -128,6 +173,13 @@ func _render_explosion_effect(progress: float) -> void:
 		_base_visual_scale * lerpf(1.0, 1.16, sin(progress * PI))
 	)
 	bomb_image.modulate = Color(1.0, lerpf(0.3, 0.8, progress), 0.18, inverse)
+
+
+func _render_protection_effect(progress: float) -> void:
+	var inverse := 1.0 - progress
+	explosion_flash.scale = Vector2.ONE * lerpf(0.72, 1.28, progress)
+	explosion_flash.modulate.a = inverse
+	bomb_image.modulate = Color(0.5, 0.86, 1.0, 1.0)
 
 
 func _finish_effect() -> void:
@@ -156,6 +208,8 @@ func _reset_effect_visuals() -> void:
 	explosion_flash.visible = false
 	explosion_flash.scale = Vector2.ONE
 	explosion_flash.modulate = Color.WHITE
+	explosion_flash.self_modulate = Color.WHITE
+	_refresh_power_up_visuals()
 
 
 func _reset_inactive_visuals() -> void:
@@ -170,6 +224,36 @@ func _reset_inactive_visuals() -> void:
 func _refresh_pivots() -> void:
 	bomb_image.pivot_offset = bomb_image.size * 0.5
 	explosion_flash.pivot_offset = explosion_flash.size * 0.5
+	scan_glow.pivot_offset = scan_glow.size * 0.5
+
+
+func _refresh_power_up_visuals() -> void:
+	if not is_node_ready():
+		return
+	var should_glow := _scan_mode_active and is_active
+	z_index = 11 if should_glow else 0
+	scan_glow.visible = should_glow
+	if should_glow and _scan_pulse_tween == null:
+		scan_glow.scale = Vector2.ONE * 0.94
+		_scan_pulse_tween = create_tween().set_loops()
+		_scan_pulse_tween.tween_property(scan_glow, "scale", Vector2.ONE * 1.05, 0.55).set_trans(
+			Tween.TRANS_SINE
+		).set_ease(Tween.EASE_IN_OUT)
+		_scan_pulse_tween.tween_property(scan_glow, "scale", Vector2.ONE * 0.94, 0.55).set_trans(
+			Tween.TRANS_SINE
+		).set_ease(Tween.EASE_IN_OUT)
+	elif not should_glow and _scan_pulse_tween != null:
+		_scan_pulse_tween.kill()
+		_scan_pulse_tween = null
+		scan_glow.scale = Vector2.ONE
+	if _is_scanned and should_glow:
+		bomb_image.self_modulate = Color(0.58, 0.96, 1.18)
+	elif should_glow:
+		bomb_image.self_modulate = Color(0.84, 0.98, 1.08)
+	elif _slow_motion_active:
+		bomb_image.self_modulate = Color(0.76, 0.91, 1.0)
+	else:
+		bomb_image.self_modulate = Color.WHITE
 
 
 func _get_frame_texture(frame_index: int) -> AtlasTexture:

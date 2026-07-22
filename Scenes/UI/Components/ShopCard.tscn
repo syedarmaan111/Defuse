@@ -124,8 +124,19 @@ theme_override_font_sizes/font_size = 18
 text = "LOCKED"
 horizontal_alignment = 1
 
-[node name="DetailsButton" parent="Margin/Row" instance=ExtResource("2_button")]
+[node name="Actions" type="VBoxContainer" parent="Margin/Row"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DetailsButton" parent="Margin/Row/Actions" instance=ExtResource("2_button")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 84)
+custom_minimum_size = Vector2(150, 72)
 layout_mode = 2
 text = "DETAILS"
+
+[node name="PowerToggleButton" parent="Margin/Row/Actions" instance=ExtResource("2_button")]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(150, 72)
+layout_mode = 2
+text = "DISABLE"

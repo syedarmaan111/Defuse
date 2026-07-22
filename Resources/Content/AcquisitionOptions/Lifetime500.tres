@@ -5,4 +5,4 @@
 [resource]
 script = ExtResource("1_option")
 acquisition_type = 2
-lifetime_score_required = 500
+lifetime_score_required = 20

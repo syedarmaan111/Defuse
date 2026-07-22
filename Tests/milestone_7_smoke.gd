@@ -32,7 +32,29 @@ func _test_catalog_driven_shop() -> void:
 	await get_tree().process_frame
 	assert(shop.get_presented_category_count() == 6)
 	for state in shop.get_presented_card_states():
-		assert(state == "500 DEFUSALS · LOCKED")
+		assert(state == "20 DEFUSALS · LOCKED")
+
+	for card in shop.get_node("%Items").get_children():
+		assert(card.get_node("%Icon").visible)
+		assert(card.get_node("%Icon").texture != null)
+		assert(not card.get_node("%FallbackIcon").visible)
+		assert(card.get_node("%StateLabel").modulate.b > 0.85)
+
+	assert(PowerUpManager.unlock("shield"))
+	await get_tree().process_frame
+	assert(shop.get_presented_card_states()[0] == "UNLOCKED / ENABLED")
+	assert("QTY" not in shop.get_presented_card_states()[0])
+	var shield_card: ShopCard = shop.get_node("%Items").get_child(0)
+	var toggle_button: Button = shield_card.get_node("%PowerToggleButton")
+	assert(toggle_button.visible and not toggle_button.disabled)
+	assert(toggle_button.text == "DISABLE")
+	toggle_button.pressed.emit()
+	assert(not PowerUpManager.is_power_up_enabled("shield"))
+	assert(shield_card.get_presented_state() == "UNLOCKED / DISABLED")
+	assert(not PowerUpManager.get_enabled_unlocked_ids().has("shield"))
+	toggle_button.pressed.emit()
+	assert(PowerUpManager.is_power_up_enabled("shield"))
+	assert(shield_card.get_presented_state() == "UNLOCKED / ENABLED")
 
 	shop.select_category(ShopManager.CATEGORY_PURCHASES)
 	await get_tree().process_frame

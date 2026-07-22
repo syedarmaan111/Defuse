@@ -1,12 +1,19 @@
-[gd_resource type="Resource" script_class="PowerUpDefinition" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="PowerUpDefinition" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://Scripts/Data/power_up_definition.gd" id="1_power"]
 [ext_resource type="Resource" path="res://Resources/Content/AcquisitionOptions/Lifetime500.tres" id="2_checkpoint"]
+[ext_resource type="Texture2D" path="res://Assets/UI/UI mockups/Power ups/Scan Power Up.png" id="3_icon_source"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_icon"]
+atlas = ExtResource("3_icon_source")
+region = Rect2(60, 361, 840, 840)
 
 [resource]
 script = ExtResource("1_power")
 content_id = "scan"
 display_name = "Scan"
-description = "Automatically identifies the most urgent armed bomb."
+description = "Dims the board for 5 seconds while every armed bomb shines through."
+icon = SubResource("AtlasTexture_icon")
 effect_type = 2
+duration_seconds = 5.0
 acquisition_options = Array[Resource]([ExtResource("2_checkpoint")])

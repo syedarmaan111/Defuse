@@ -1,7 +1,7 @@
-[gd_scene load_steps=6 format=3 uid="uid://lo5dlfy68aua"]
+[gd_scene load_steps=8 format=3 uid="uid://lo5dlfy68aua"]
 
 [ext_resource type="Script" uid="uid://c1vu5f5xbk651" path="res://Scripts/Gameplay/gameplay.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://bakt7pms016bm" path="res://Assets/UI/gem_sapphire.svg" id="3_gem"]
+[ext_resource type="Texture2D" path="res://Resources/Content/GemIcon.tres" id="3_gem"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/Components/BannerAdSlot.tscn" id="4_banner"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/Components/LifeHeart.tscn" id="5_heart"]
 
@@ -19,6 +19,34 @@ corner_radius_bottom_left = 18
 shadow_color = Color(0.08, 0.08, 0.07, 0.16)
 shadow_size = 8
 shadow_offset = Vector2(0, 5)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_slow_status"]
+bg_color = Color(0.08, 0.24, 0.38, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.35, 0.82, 1, 0.92)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0.05, 0.16, 0.25, 0.4)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_chain_status"]
+bg_color = Color(0.12, 0.32, 0.22, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.38, 1, 0.58, 0.92)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0.05, 0.2, 0.1, 0.4)
+shadow_size = 8
 
 [node name="Gameplay" type="Control" unique_id=372479178]
 layout_mode = 3
@@ -146,3 +174,77 @@ layout_mode = 2
 theme_override_constants/h_separation = 22
 theme_override_constants/v_separation = 22
 columns = 2
+
+[node name="SlowMotionTint" type="ColorRect" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 8
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.12, 0.58, 0.88, 0)
+
+[node name="ScanShade" type="ColorRect" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 10
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.015, 0.025, 0.045, 0)
+
+[node name="EffectStatus" type="VBoxContainer" parent="."]
+z_index = 20
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 188.0
+offset_bottom = 304.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="SlowMotionStatus" type="PanelContainer" parent="EffectStatus"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(500, 52)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_slow_status")
+
+[node name="SlowMotionLabel" type="Label" parent="EffectStatus/SlowMotionStatus"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.97, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "SLOW MOTION  •  TIMERS ×0.35"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ChainDefuseStatus" type="PanelContainer" parent="EffectStatus"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(500, 52)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_chain_status")
+
+[node name="ChainDefuseLabel" type="Label" parent="EffectStatus/ChainDefuseStatus"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 1, 0.92, 1)
+theme_override_font_sizes/font_size = 24
+text = "CHAIN DEFUSE  •  6.0s"
+horizontal_alignment = 1
+vertical_alignment = 1

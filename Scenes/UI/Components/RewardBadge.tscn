@@ -1,0 +1,71 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/reward_badge.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Resources/Content/GemIcon.tres" id="2_gem"]
+
+[node name="RewardBadge" type="Control"]
+visible = false
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="GemIcon" type="TextureRect" parent="."]
+unique_name_in_owner = true
+texture_filter = 4
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_gem")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GemAmountLabel" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -43.0
+offset_top = -34.0
+offset_right = 1.0
+offset_bottom = 1.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.025, 0.09, 0.18, 0.96)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 23
+text = "+1"
+horizontal_alignment = 2
+vertical_alignment = 2
+
+[node name="PowerIcon" type="TextureRect" parent="."]
+unique_name_in_owner = true
+visible = false
+texture_filter = 4
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5

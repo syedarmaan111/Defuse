@@ -1,7 +1,7 @@
 [gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://Scripts/UI/shop_screen.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://Assets/UI/gem_sapphire.svg" id="2_gem"]
+[ext_resource type="Texture2D" path="res://Resources/Content/GemIcon.tres" id="2_gem"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/Components/SecondaryButton.tscn" id="3_secondary"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/ShopDetailDialog.tscn" id="4_detail"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/ShopConfirmationDialog.tscn" id="5_confirm"]

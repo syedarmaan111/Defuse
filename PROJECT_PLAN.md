@@ -15,7 +15,7 @@ This document is the implementation roadmap. Its rules supersede older conflicti
 
 ## Current Repository Status
 
-- Milestones 1 through 9 are complete.
+- Milestones 1 through 10 are complete.
 - `Main.tscn` coordinates responsive Home, Shop, Profile, Gameplay, network,
   sign-in, Pause, and Game Over scenes built from real Godot `Control` nodes.
 - Manager-owned, signal-driven foundations cover launch gating, cloud/local
@@ -25,8 +25,8 @@ This document is the implementation roadmap. Its rules supersede older conflicti
   explosions, score, lives, exact active-bomb counts, all five stages, pause
   gating, guarded resolution, wave-safe stage changes, game-over finalization,
   best-score persistence, and an enlarged finger-friendly 4x4 layout.
-- Rewards, power-up effects, checkpoint choices, countdown/revive, ads,
-  settings, and release work remain in Milestones 10 through 14.
+- Checkpoint choices, countdown/revive, ads, settings, and release work remain
+  in Milestones 11 through 14.
 - Live billing and real-money content remain deliberately unimplemented under
   the payment hold above.
 
@@ -59,7 +59,7 @@ Scenes/UI/
 	ConfirmationPopup.tscn
 	NotificationPopup.tscn
 	ProfileStatCard.tscn
-	RewardIcon.tscn
+	RewardBadge.tscn
   Screens/
 	HomeScreen.tscn
 	HUD.tscn
@@ -182,7 +182,7 @@ the user explicitly resumes payment work.
 - Gems are earn-only gameplay currency. The game never sells, tops up, exchanges, or provides a Gem-purchase screen.
 - Remove the `+` Gem purchase affordance from all implemented screens.
 - Skins may be default grants or earned with Gems while payments are deferred.
-- Power-ups are unlocked through the 500-lifetime-defusal checkpoint flow while
+- Power-ups are unlocked through the 1,500-lifetime-defusal checkpoint flow while
   payments are deferred. They never use Gem purchase.
 - `default_bomb` is the sole initial skin and is granted, owned, equipped, and selected on first launch.
 - No real-money entitlement is offered or processed during the payment hold.
@@ -275,9 +275,9 @@ Migrate legacy `total_gems` to `currencies["gems"]` and `selected_skin` to `equi
 
 Profile displays selected skin preview, best score, lifetime defusals, earned Gems, owned skin count, unlocked power-up count, and settings entry. It does not add social features, avatars, cloud-account management, achievements, or leaderboards.
 
-### 500-Score Power-Up Choice
+### 1,500-Score Power-Up Choice
 
-- Every eligible 500 lifetime successful defusals queues one choice until all defined power-ups are owned.
+- Every eligible 1,500 lifetime successful defusals queues one choice until all defined power-ups are owned.
 - Persist the queue before presentation.
 - After Game Over, `PowerUpUnlockOverlay` reuses the shop Power-up catalog/card layout, filtering to locked checkpoint-eligible entries and replacing acquisition controls with `CHOOSE`.
 - Claim exactly one item per pending choice. Real-money buttons are hidden in checkpoint-choice mode.
@@ -321,6 +321,16 @@ Bombs guard against double resolution. Bomb explosion is local; neighboring bomb
 - A Gem grants one permanently saved Gem. Until any power-up is unlocked, all rewards are Gems; afterward, reward selection is 50% Gem and 50% a random unlocked power-up.
 - Power-ups are single-use and activate automatically when their critical condition is met.
 - Implement Shield, Slow Motion, Scan, Extra Life, Combo Boost, and Chain Defuse from Resource definitions.
+- Shield blocks the next timeout or inactive-tap life loss. Extra Life restores
+  one life immediately after a life is lost when a slot is available.
+- Scan activates when two or more bombs are active and the most urgent reaches
+  50% time, highlighting that bomb for three gameplay seconds.
+- Slow Motion activates when at least two bombs reach 32% time, running bomb
+  timers at 55% speed for five gameplay seconds.
+- Combo Boost activates after four defusals within a continuing two-second
+  chain and doubles scoring for eight gameplay seconds.
+- Chain Defuse activates after a successful defusal when another bomb remains,
+  automatically resolving the most urgent additional bomb.
 
 ### Pre-Play Countdown and Revive Grace
 
@@ -361,8 +371,10 @@ Bombs guard against double resolution. Bomb explosion is local; neighboring bomb
    guarded wrong-tap and timeout explosions, life loss, wave-safe stage
    transitions, supplied armed frames/audio, red danger fill, and localized
    effects are in place.
-10. **Timed Rewards and Power-Up Effects** — Add reward spawning, pulsing icons, Gem collection, and all approved automatic power-ups.
-11. **Lifetime Score and Checkpoint Choice** — Add 500-score queue, reused power-up selection overlay, and cloud-safe claim flow.
+10. **Timed Rewards and Power-Up Effects** — Complete. One timed pulsing reward,
+   safe inactive claims, active reward defusal, saved Gem/inventory collection,
+   expiry cleanup, and all six automatic power-up effects are in place.
+11. **Lifetime Score and Checkpoint Choice** — Add 1,500-score queue, reused power-up selection overlay, and cloud-safe claim flow.
 12. **Countdown, Pause, and Rewarded Revive** — Add pre-play countdown, one revive/run, five-second timer grace, and responsive overlays.
 13. **Ads, Settings, and Audio** — Add ad safeguards, settings, audio controls,
    and release-safe ad integration. Billing and purchase restoration are not in

@@ -7,7 +7,7 @@
 - The owned/equipped `default_bomb` as the initial skin, backed by the supplied
   bomb image, animation directory, and original audio assets.
 - Resource definitions for Shield, Slow Motion, Scan, Extra Life, Combo Boost,
-  and Chain Defuse. Each is eligible for the future 500-lifetime-defusal choice.
+  and Chain Defuse. Each is eligible for the future 1,500-lifetime-defusal choice.
 - An intentionally empty purchase-offer list until real products are configured.
 - `EconomyManager` as the sole gameplay-facing Gem credit/debit API. It does not
   expose any paid Gem top-up or currency exchange route.

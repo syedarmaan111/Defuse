@@ -1,12 +1,20 @@
-[gd_resource type="Resource" script_class="PowerUpDefinition" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="PowerUpDefinition" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://Scripts/Data/power_up_definition.gd" id="1_power"]
 [ext_resource type="Resource" path="res://Resources/Content/AcquisitionOptions/Lifetime500.tres" id="2_checkpoint"]
+[ext_resource type="Texture2D" path="res://Assets/UI/UI mockups/Power ups/Combo boost power up.png" id="3_icon_source"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_icon"]
+atlas = ExtResource("3_icon_source")
+region = Rect2(226, 384, 620, 620)
 
 [resource]
 script = ExtResource("1_power")
 content_id = "combo_boost"
 display_name = "Combo Boost"
 description = "Automatically boosts scoring while a successful defusal chain continues."
+icon = SubResource("AtlasTexture_icon")
 effect_type = 4
+duration_seconds = 8.0
+effect_strength = 2.0
 acquisition_options = Array[Resource]([ExtResource("2_checkpoint")])

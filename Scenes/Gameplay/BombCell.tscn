@@ -1,8 +1,9 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://Scripts/Gameplay/bomb_cell.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://Assets/Bomb/bomb_reference.png" id="2_bomb"]
 [ext_resource type="Shader" path="res://Shaders/bomb_alpha_cleanup.gdshader" id="3_shader"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/RewardBadge.tscn" id="4_reward"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_bomb"]
 atlas = ExtResource("2_bomb")
@@ -26,6 +27,20 @@ corner_radius_bottom_left = 96
 shadow_color = Color(0.8, 0.0901961, 0.0156863, 0.55)
 shadow_size = 18
 
+[sub_resource type="StyleBoxFlat" id="StyleBox_scan_glow"]
+bg_color = Color(0.18, 0.75, 1, 0.16)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.48, 0.92, 1, 0.96)
+corner_radius_top_left = 96
+corner_radius_top_right = 96
+corner_radius_bottom_right = 96
+corner_radius_bottom_left = 96
+shadow_color = Color(0.12, 0.72, 1, 0.88)
+shadow_size = 28
+
 [node name="BombCell" type="Control"]
 custom_minimum_size = Vector2(180, 180)
 layout_mode = 3
@@ -48,6 +63,22 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBox_explosion")
+
+[node name="ScanGlow" type="Panel" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = 14.0
+offset_right = -14.0
+offset_bottom = -14.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_scan_glow")
 
 [node name="BombImage" type="TextureRect" parent="."]
 unique_name_in_owner = true
@@ -78,3 +109,18 @@ grow_horizontal = 2
 grow_vertical = 2
 focus_mode = 0
 flat = true
+
+[node name="RewardBadge" parent="." instance=ExtResource("4_reward")]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 0
+anchor_left = 0.5
+anchor_top = 0.585
+anchor_right = 0.5
+anchor_bottom = 0.585
+offset_left = -48.0
+offset_top = -48.0
+offset_right = 48.0
+offset_bottom = 48.0
+grow_horizontal = 2
+grow_vertical = 2

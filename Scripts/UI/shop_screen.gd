@@ -174,7 +174,7 @@ func _on_acquisition_failed(content_id: String, error_code: String) -> void:
 			message = "%s is already in your inventory." % display_name
 		"checkpoint_choice_required":
 			title = "CHECKPOINT REWARD"
-			message = "Power-ups are chosen after each eligible 500-defusal checkpoint."
+			message = "Choose one power-up after a run for every 20 lifetime defusals reached."
 	feedback_dialog.show_feedback(title, message)
 
 

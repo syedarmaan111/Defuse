@@ -16,6 +16,7 @@ extends Node
 @onready var connection_status_overlay: Control = $NotificationRoot/ConnectionStatusOverlay
 @onready var save_conflict_dialog: Control = $NotificationRoot/SaveConflictDialog
 @onready var exit_confirmation_dialog: Control = $NotificationRoot/ExitConfirmationDialog
+@onready var power_up_unlock_overlay: PowerUpUnlockOverlay = $NotificationRoot/PowerUpUnlockOverlay
 
 
 func _ready() -> void:
@@ -34,6 +35,7 @@ func _ready() -> void:
 	CloudSaveManager.cloud_conflict_detected.connect(save_conflict_dialog.show_conflict)
 	exit_confirmation_dialog.leave_confirmed.connect(_exit_application)
 	_refresh_launch_gate()
+	power_up_unlock_overlay.call_deferred("show_if_pending")
 
 
 func _notification(what: int) -> void:
@@ -47,6 +49,8 @@ func _handle_mobile_back() -> void:
 		return
 	if exit_confirmation_dialog.visible:
 		exit_confirmation_dialog.cancel()
+		return
+	if power_up_unlock_overlay.visible:
 		return
 	if GameManager.get_current_screen_name() == "gameplay":
 		GameManager.pause_game()
@@ -93,6 +97,7 @@ func _on_game_over_requested(final_score: int, best_score: int) -> void:
 	## Passes score text into the Game Over screen.
 	## During this UI milestone these values are placeholders supplied by callers.
 	game_over_screen.set_scores(final_score, best_score)
+	power_up_unlock_overlay.show_if_pending()
 
 
 func _refresh_launch_gate() -> void:

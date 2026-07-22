@@ -68,7 +68,7 @@ func refresh_state() -> void:
 		actions.add_child(equip_button)
 		return
 	if owned:
-		state_label.text = "UNLOCKED · QUANTITY %d" % int(state.get("quantity", 0))
+		state_label.text = "UNLOCKED"
 		_add_button("UNLOCKED", true)
 		return
 
@@ -89,8 +89,13 @@ func refresh_state() -> void:
 					option.acquisition_type
 				)
 			AcquisitionOption.AcquisitionType.LIFETIME_SCORE_CHECKPOINT:
+				var next_checkpoint := PowerUpManager.get_next_checkpoint_threshold()
 				_add_button(
-					"CHOOSE AT %d LIFETIME DEFUSALS" % option.lifetime_score_required,
+					"NEXT CHOICE AT %d LIFETIME DEFUSALS" % (
+						next_checkpoint
+						if next_checkpoint > 0
+						else option.lifetime_score_required
+					),
 					true
 				)
 			AcquisitionOption.AcquisitionType.REAL_MONEY_PURCHASE:

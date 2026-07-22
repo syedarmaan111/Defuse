@@ -1,0 +1,96 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/power_up_unlock_card.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/PrimaryButton.tscn" id="2_button"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_card"]
+bg_color = Color(0.99, 0.974, 0.925, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 6
+border_color = Color(0.66, 0.55, 0.35, 0.32)
+corner_radius_top_left = 26
+corner_radius_top_right = 26
+corner_radius_bottom_right = 26
+corner_radius_bottom_left = 26
+shadow_color = Color(0.08, 0.08, 0.07, 0.13)
+shadow_size = 8
+shadow_offset = Vector2(0, 5)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_icon"]
+bg_color = Color(0.94, 0.9, 0.81, 1)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_badge"]
+bg_color = Color(0.91, 0.86, 0.73, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="PowerUpUnlockCard" type="PanelContainer"]
+custom_minimum_size = Vector2(0, 196)
+theme_override_styles/panel = SubResource("StyleBox_card")
+script = ExtResource("1_script")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 18
+
+[node name="Row" type="HBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="IconPanel" type="PanelContainer" parent="Margin/Row"]
+custom_minimum_size = Vector2(146, 146)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_icon")
+
+[node name="Icon" type="TextureRect" parent="Margin/Row/IconPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+texture_filter = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Copy" type="VBoxContainer" parent="Margin/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 7
+
+[node name="PowerUpName" type="Label" parent="Margin/Row/Copy"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.13, 0.16, 0.17, 1)
+theme_override_font_sizes/font_size = 29
+text = "POWER-UP"
+
+[node name="Description" type="Label" parent="Margin/Row/Copy"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.37, 0.36, 0.32, 1)
+theme_override_font_sizes/font_size = 19
+text = "Description"
+autowrap_mode = 2
+
+[node name="PermanentBadge" type="Label" parent="Margin/Row/Copy"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.31, 0.28, 0.22, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBox_badge")
+text = "PERMANENT UNLOCK"
+horizontal_alignment = 1
+
+[node name="UnlockButton" parent="Margin/Row" instance=ExtResource("2_button")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(156, 88)
+layout_mode = 2
+text = "UNLOCK"

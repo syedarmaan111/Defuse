@@ -101,6 +101,7 @@ func get_content_state(content_id: String) -> Dictionary:
 			"owned": PowerUpManager.is_unlocked(content_id),
 			"equipped": false,
 			"selected": false,
+			"enabled": PowerUpManager.is_power_up_enabled(content_id),
 			"quantity": PowerUpManager.get_quantity(content_id),
 			"acquisition_options": power_up.acquisition_options.duplicate(),
 		}
