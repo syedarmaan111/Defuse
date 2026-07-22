@@ -93,6 +93,10 @@ func _apply_state(active: bool, animate: bool) -> void:
 	if became_active:
 		_cancel_effect()
 		_reset_effect_visuals()
+		# A cell can be selected again while its previous defuse/explosion tween is
+		# still running. Cancelling that tween skips _finish_effect(), so restore
+		# input here instead of leaving the newly active bomb untappable.
+		touch_target.disabled = false
 	touch_target.tooltip_text = (
 		"Active bomb %d" % (bomb_index + 1)
 		if is_active

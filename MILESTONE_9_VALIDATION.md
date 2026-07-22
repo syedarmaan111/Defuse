@@ -14,6 +14,8 @@
   without changing score or active neighbors.
 - Per-cell resolution guards so repeated input during a defuse or explosion
   cannot resolve the same bomb twice.
+- Immediate touch restoration when a cell is re-armed before its previous
+  effect finishes, preventing intermittent missed defusals during rapid play.
 - Supplied armed PNG sequence playback, a rising red danger fill, defuse motion,
   and localized explosion flash/shake effects.
 - Supplied fuse, defuse, and explosion audio with independently stoppable fuse
@@ -40,6 +42,7 @@ payments remain on the user-directed indefinite hold in `PROJECT_PLAN.md`.
   - pause freezing gameplay time;
   - supplied animation-frame and red-fill presentation;
   - defusal score, effect, audio, and double-resolution protection;
+  - rapid cell reactivation restoring its touch target immediately;
   - absence of stage text and stage popups;
   - two active bombs retaining independent timers;
   - timer expiry costing one life and preserving the neighboring active bomb;

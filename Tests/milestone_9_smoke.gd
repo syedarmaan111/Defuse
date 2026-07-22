@@ -71,6 +71,12 @@ func _test_defusal_and_stage_presentation(gameplay: Control) -> void:
 	assert(not GameManager.get_active_bomb_indices().has(resolved_index))
 	var resolved_cell: BombCell = gameplay.get_node("%BombGrid").get_child(resolved_index)
 	assert(resolved_cell._effect_tween != null)
+	assert(resolved_cell.touch_target.disabled)
+	# Re-arming a cell before its old effect completes must cancel the effect and
+	# restore input immediately; this was the cause of intermittent missed taps.
+	resolved_cell.set_active(true)
+	assert(not resolved_cell.touch_target.disabled)
+	resolved_cell.set_active(false)
 	# The resolution guard prevents a fast second tap becoming an accidental
 	# inactive-bomb penalty.
 	assert(not GameManager.handle_bomb_tapped(resolved_index))
