@@ -18,9 +18,13 @@ config/icon="res://icon.svg"
 [autoload]
 
 NetworkManager="*res://Scripts/Autoloads/network_manager.gd"
+SaveManager="*res://Scripts/Autoloads/save_manager.gd"
+EconomyManager="*res://Scripts/Autoloads/economy_manager.gd"
+SkinManager="*res://Scripts/Autoloads/skin_manager.gd"
+PowerUpManager="*res://Scripts/Autoloads/power_up_manager.gd"
+ShopManager="*res://Scripts/Autoloads/shop_manager.gd"
 CloudSaveManager="*res://Scripts/Autoloads/cloud_save_manager.gd"
 GameManager="*res://Scripts/Autoloads/game_manager.gd"
-SaveManager="*res://Scripts/Autoloads/save_manager.gd"
 AudioManager="*res://Scripts/Autoloads/audio_manager.gd"
 GodotPlayGameServices="*uid://okgap0vbtm6"
 

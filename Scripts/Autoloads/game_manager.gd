@@ -44,6 +44,9 @@ func start_game() -> void:
 	if not CloudSaveManager.is_gate_satisfied():
 		set_current_screen(ScreenName.SIGN_IN)
 		return
+	if not CloudSaveManager.is_restore_ready():
+		set_current_screen(ScreenName.SIGN_IN)
+		return
 	current_score = 0
 	set_current_screen(ScreenName.GAMEPLAY)
 
@@ -74,6 +77,8 @@ func show_home_if_ready() -> void:
 	if not NetworkManager.can_start_game():
 		set_current_screen(ScreenName.NETWORK_REQUIRED)
 	elif not CloudSaveManager.is_gate_satisfied():
+		set_current_screen(ScreenName.SIGN_IN)
+	elif not CloudSaveManager.is_restore_ready():
 		set_current_screen(ScreenName.SIGN_IN)
 	else:
 		set_current_screen(ScreenName.HOME)

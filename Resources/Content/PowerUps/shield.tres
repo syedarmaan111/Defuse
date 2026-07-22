@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="PowerUpDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Data/power_up_definition.gd" id="1_power"]
+[ext_resource type="Resource" path="res://Resources/Content/AcquisitionOptions/Lifetime500.tres" id="2_checkpoint"]
+
+[resource]
+script = ExtResource("1_power")
+content_id = "shield"
+display_name = "Shield"
+description = "Automatically blocks one bomb explosion that would cost a life."
+effect_type = 0
+acquisition_options = Array[Resource]([ExtResource("2_checkpoint")])

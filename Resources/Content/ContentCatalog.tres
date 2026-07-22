@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ContentCatalog" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Data/content_catalog.gd" id="1_catalog"]
+[ext_resource type="Resource" path="res://Resources/Content/Skins/default_bomb.tres" id="2_default"]
+[ext_resource type="Resource" path="res://Resources/Content/PowerUps/shield.tres" id="3_shield"]
+[ext_resource type="Resource" path="res://Resources/Content/PowerUps/slow_motion.tres" id="4_slow"]
+[ext_resource type="Resource" path="res://Resources/Content/PowerUps/scan.tres" id="5_scan"]
+[ext_resource type="Resource" path="res://Resources/Content/PowerUps/extra_life.tres" id="6_life"]
+[ext_resource type="Resource" path="res://Resources/Content/PowerUps/combo_boost.tres" id="7_combo"]
+[ext_resource type="Resource" path="res://Resources/Content/PowerUps/chain_defuse.tres" id="8_chain"]
+
+[resource]
+script = ExtResource("1_catalog")
+skins = Array[Resource]([ExtResource("2_default")])
+power_ups = Array[Resource]([ExtResource("3_shield"), ExtResource("4_slow"), ExtResource("5_scan"), ExtResource("6_life"), ExtResource("7_combo"), ExtResource("8_chain")])

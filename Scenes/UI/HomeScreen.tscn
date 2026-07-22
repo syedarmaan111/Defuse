@@ -271,6 +271,6 @@ theme_override_font_sizes/font_size = 76
 text = "0"
 horizontal_alignment = 1
 
-[node name="BottomSpacer" type="Control" parent="SafeMargins/Content"]
+[node name="BottomSpacer" type="Control" parent="SafeMargins/Content" unique_id=966529749]
 custom_minimum_size = Vector2(0, 28)
 layout_mode = 2

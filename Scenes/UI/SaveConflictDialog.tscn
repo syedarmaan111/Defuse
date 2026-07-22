@@ -1,0 +1,197 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/save_conflict_dialog.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/PrimaryButton.tscn" id="2_primary"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/SecondaryButton.tscn" id="3_secondary"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_dialog"]
+bg_color = Color(0.968627, 0.94902, 0.913725, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 7
+border_color = Color(0.31, 0.3, 0.27, 0.35)
+corner_radius_top_left = 34
+corner_radius_top_right = 34
+corner_radius_bottom_right = 34
+corner_radius_bottom_left = 34
+shadow_color = Color(0.04, 0.05, 0.05, 0.36)
+shadow_size = 22
+shadow_offset = Vector2(0, 12)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_summary"]
+bg_color = Color(0.91, 0.89, 0.85, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.25, 0.27, 0.27, 0.22)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_badge"]
+bg_color = Color(0.94, 0.48, 0.45, 1)
+corner_radius_top_left = 42
+corner_radius_top_right = 42
+corner_radius_bottom_right = 42
+corner_radius_bottom_left = 42
+
+[node name="SaveConflictDialog" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+script = ExtResource("1_script")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.04, 0.05, 0.055, 0.72)
+
+[node name="SafeMargins" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 42
+theme_override_constants/margin_top = 56
+theme_override_constants/margin_right = 42
+theme_override_constants/margin_bottom = 56
+
+[node name="Center" type="CenterContainer" parent="SafeMargins"]
+layout_mode = 2
+
+[node name="DialogPanel" type="PanelContainer" parent="SafeMargins/Center"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 910)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBox_dialog")
+
+[node name="Margins" type="MarginContainer" parent="SafeMargins/Center/DialogPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 46
+theme_override_constants/margin_top = 46
+theme_override_constants/margin_right = 46
+theme_override_constants/margin_bottom = 46
+
+[node name="Content" type="VBoxContainer" parent="SafeMargins/Center/DialogPanel/Margins"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="BadgeCenter" type="CenterContainer" parent="SafeMargins/Center/DialogPanel/Margins/Content"]
+layout_mode = 2
+
+[node name="Badge" type="PanelContainer" parent="SafeMargins/Center/DialogPanel/Margins/Content/BadgeCenter"]
+custom_minimum_size = Vector2(84, 84)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_badge")
+
+[node name="Icon" type="Label" parent="SafeMargins/Center/DialogPanel/Margins/Content/BadgeCenter/Badge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.96, 0.91, 1)
+theme_override_font_sizes/font_size = 38
+text = "!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Title" type="Label" parent="SafeMargins/Center/DialogPanel/Margins/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.13, 0.16, 0.17, 1)
+theme_override_font_sizes/font_size = 41
+text = "CHOOSE YOUR SAVE"
+horizontal_alignment = 1
+
+[node name="Body" type="Label" parent="SafeMargins/Center/DialogPanel/Margins/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.32, 0.32, 1)
+theme_override_font_sizes/font_size = 23
+text = "This device and the cloud contain different progress. Compare both before choosing. Your selection will become the saved version."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="LocalCard" type="PanelContainer" parent="SafeMargins/Center/DialogPanel/Margins/Content"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_summary")
+
+[node name="LocalMargins" type="MarginContainer" parent="SafeMargins/Center/DialogPanel/Margins/Content/LocalCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 18
+
+[node name="LocalContent" type="HBoxContainer" parent="SafeMargins/Center/DialogPanel/Margins/Content/LocalCard/LocalMargins"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Label" type="Label" parent="SafeMargins/Center/DialogPanel/Margins/Content/LocalCard/LocalMargins/LocalContent"]
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.14, 0.17, 0.18, 1)
+theme_override_font_sizes/font_size = 24
+text = "THIS DEVICE"
+vertical_alignment = 1
+
+[node name="LocalSummaryLabel" type="Label" parent="SafeMargins/Center/DialogPanel/Margins/Content/LocalCard/LocalMargins/LocalContent"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.25, 0.28, 0.29, 1)
+theme_override_font_sizes/font_size = 20
+text = "Best score: 0"
+autowrap_mode = 2
+
+[node name="CloudCard" type="PanelContainer" parent="SafeMargins/Center/DialogPanel/Margins/Content"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_summary")
+
+[node name="CloudMargins" type="MarginContainer" parent="SafeMargins/Center/DialogPanel/Margins/Content/CloudCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 18
+
+[node name="CloudContent" type="HBoxContainer" parent="SafeMargins/Center/DialogPanel/Margins/Content/CloudCard/CloudMargins"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Label" type="Label" parent="SafeMargins/Center/DialogPanel/Margins/Content/CloudCard/CloudMargins/CloudContent"]
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.14, 0.17, 0.18, 1)
+theme_override_font_sizes/font_size = 24
+text = "CLOUD"
+vertical_alignment = 1
+
+[node name="CloudSummaryLabel" type="Label" parent="SafeMargins/Center/DialogPanel/Margins/Content/CloudCard/CloudMargins/CloudContent"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.25, 0.28, 0.29, 1)
+theme_override_font_sizes/font_size = 20
+text = "Best score: 0"
+autowrap_mode = 2
+
+[node name="LocalButton" parent="SafeMargins/Center/DialogPanel/Margins/Content" instance=ExtResource("3_secondary")]
+unique_name_in_owner = true
+layout_mode = 2
+text = "USE THIS DEVICE"
+
+[node name="CloudButton" parent="SafeMargins/Center/DialogPanel/Margins/Content" instance=ExtResource("2_primary")]
+unique_name_in_owner = true
+layout_mode = 2
+text = "USE CLOUD SAVE"

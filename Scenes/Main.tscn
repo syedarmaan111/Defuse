@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://defuse_main_scene"]
+[gd_scene load_steps=10 format=3 uid="uid://defuse_main_scene"]
 
 [ext_resource type="Script" path="res://Scripts/main.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/HomeScreen.tscn" id="1_home"]
@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" path="res://Scenes/UI/NetworkRequiredScreen.tscn" id="5_network"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/SignInScreen.tscn" id="6_signin"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/ConnectionStatusOverlay.tscn" id="7_connection"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/SaveConflictDialog.tscn" id="8_conflict"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_script")
@@ -39,3 +40,6 @@ visible = false
 layer = 20
 
 [node name="ConnectionStatusOverlay" parent="NotificationRoot" instance=ExtResource("7_connection")]
+
+[node name="SaveConflictDialog" parent="NotificationRoot" instance=ExtResource("8_conflict")]
+visible = false

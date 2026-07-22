@@ -12,6 +12,7 @@ extends Node
 @onready var pause_menu: Control = $OverlayRoot/PauseMenu
 @onready var game_over_screen: Control = $OverlayRoot/GameOverScreen
 @onready var connection_status_overlay: Control = $NotificationRoot/ConnectionStatusOverlay
+@onready var save_conflict_dialog: Control = $NotificationRoot/SaveConflictDialog
 
 
 func _ready() -> void:
@@ -25,6 +26,8 @@ func _ready() -> void:
 	NetworkManager.gameplay_connection_restored.connect(connection_status_overlay.show_connection_restored)
 	CloudSaveManager.cloud_sign_in_succeeded.connect(_on_cloud_sign_in_succeeded)
 	CloudSaveManager.cloud_sign_in_failed.connect(_on_cloud_sign_in_failed)
+	CloudSaveManager.cloud_restore_completed.connect(_on_cloud_restore_completed)
+	CloudSaveManager.cloud_conflict_detected.connect(save_conflict_dialog.show_conflict)
 	_refresh_launch_gate()
 
 
@@ -41,7 +44,10 @@ func _on_screen_changed(screen_name: String) -> void:
 	if screen_name in ["home", "network_required", "sign_in"]:
 		connection_status_overlay.visible = false
 	if screen_name == "sign_in" and not CloudSaveManager.is_authentication_pending():
-		CloudSaveManager.check_authentication()
+		if CloudSaveManager.is_signed_in() and not CloudSaveManager.is_restore_ready():
+			CloudSaveManager.restore_progress()
+		else:
+			CloudSaveManager.check_authentication()
 
 
 func _on_game_over_requested(final_score: int, best_score: int) -> void:
@@ -64,6 +70,11 @@ func _on_connection_state_changed(_is_available: bool) -> void:
 
 
 func _on_cloud_sign_in_succeeded() -> void:
+	if NetworkManager.can_start_game() and CloudSaveManager.is_restore_ready():
+		GameManager.show_home_if_ready()
+
+
+func _on_cloud_restore_completed() -> void:
 	if NetworkManager.can_start_game():
 		GameManager.show_home_if_ready()
 

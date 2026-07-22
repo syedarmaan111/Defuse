@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3 uid="uid://lo5dlfy68aua"]
+[gd_scene format=3 uid="uid://lo5dlfy68aua"]
 
 [ext_resource type="Script" uid="uid://c1vu5f5xbk651" path="res://Scripts/Gameplay/gameplay.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://bakt7pms016bm" path="res://Assets/UI/gem_sapphire.svg" id="3_gem"]
@@ -6,20 +6,20 @@
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_hud"]
 bg_color = Color(0.968627, 0.94902, 0.913725, 0.9)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 5
 border_color = Color(0.34, 0.33, 0.3, 0.28)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
 shadow_color = Color(0.08, 0.08, 0.07, 0.16)
 shadow_size = 8
 shadow_offset = Vector2(0, 5)
 
-[node name="Gameplay" type="Control"]
+[node name="Gameplay" type="Control" unique_id=372479178]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -28,7 +28,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_script")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=1856833982]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -37,7 +37,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.968627, 0.952941, 0.92549, 1)
 
-[node name="SafeMargins" type="MarginContainer" parent="."]
+[node name="SafeMargins" type="MarginContainer" parent="." unique_id=481333378]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -49,17 +49,17 @@ theme_override_constants/margin_top = 38
 theme_override_constants/margin_right = 48
 theme_override_constants/margin_bottom = 42
 
-[node name="Content" type="VBoxContainer" parent="SafeMargins"]
+[node name="Content" type="VBoxContainer" parent="SafeMargins" unique_id=1303259615]
 layout_mode = 2
 theme_override_constants/separation = 18
 
-[node name="BannerAdSlot" parent="SafeMargins/Content" instance=ExtResource("4_banner")]
+[node name="BannerAdSlot" parent="SafeMargins/Content" unique_id=749154246 instance=ExtResource("4_banner")]
 layout_mode = 2
 
-[node name="Hud" type="HBoxContainer" parent="SafeMargins/Content"]
+[node name="Hud" type="HBoxContainer" parent="SafeMargins/Content" unique_id=1488626401]
 layout_mode = 2
 
-[node name="PauseButton" type="Button" parent="SafeMargins/Content/Hud"]
+[node name="PauseButton" type="Button" parent="SafeMargins/Content/Hud" unique_id=1537617071]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(72, 64)
 layout_mode = 2
@@ -68,11 +68,11 @@ theme_override_font_sizes/font_size = 30
 theme_override_styles/normal = SubResource("StyleBox_hud")
 text = "Ⅱ"
 
-[node name="HudSpacerLeft" type="Control" parent="SafeMargins/Content/Hud"]
+[node name="HudSpacerLeft" type="Control" parent="SafeMargins/Content/Hud" unique_id=1264716497]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Score" type="Label" parent="SafeMargins/Content/Hud"]
+[node name="Score" type="Label" parent="SafeMargins/Content/Hud" unique_id=1297537499]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.156863, 0.188235, 0.2, 1)
 theme_override_colors/font_shadow_color = Color(0.1, 0.1, 0.09, 0.2)
@@ -81,49 +81,49 @@ theme_override_font_sizes/font_size = 34
 text = "SCORE  0"
 vertical_alignment = 1
 
-[node name="HudSpacerRight" type="Control" parent="SafeMargins/Content/Hud"]
+[node name="HudSpacerRight" type="Control" parent="SafeMargins/Content/Hud" unique_id=1223374661]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Gems" type="PanelContainer" parent="SafeMargins/Content/Hud"]
+[node name="Gems" type="PanelContainer" parent="SafeMargins/Content/Hud" unique_id=1674204589]
 custom_minimum_size = Vector2(148, 78)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBox_hud")
 
-[node name="Row" type="HBoxContainer" parent="SafeMargins/Content/Hud/Gems"]
+[node name="Row" type="HBoxContainer" parent="SafeMargins/Content/Hud/Gems" unique_id=1127020790]
 layout_mode = 2
-alignment = 1
 theme_override_constants/separation = 10
+alignment = 1
 
-[node name="Gem" type="TextureRect" parent="SafeMargins/Content/Hud/Gems/Row"]
+[node name="Gem" type="TextureRect" parent="SafeMargins/Content/Hud/Gems/Row" unique_id=1364536050]
+texture_filter = 4
 custom_minimum_size = Vector2(42, 42)
 layout_mode = 2
-texture_filter = 4
 texture = ExtResource("3_gem")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Count" type="Label" parent="SafeMargins/Content/Hud/Gems/Row"]
+[node name="Count" type="Label" parent="SafeMargins/Content/Hud/Gems/Row" unique_id=995500660]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.156863, 0.188235, 0.2, 1)
 theme_override_font_sizes/font_size = 30
 text = "0"
 
-[node name="Lives" type="Label" parent="SafeMargins/Content"]
+[node name="Lives" type="Label" parent="SafeMargins/Content" unique_id=139245710]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 0.28, 0.25, 1)
 theme_override_font_sizes/font_size = 26
 text = "LIVES   ♥ ♥ ♥"
 horizontal_alignment = 1
 
-[node name="BoardArea" type="CenterContainer" parent="SafeMargins/Content"]
+[node name="BoardArea" type="CenterContainer" parent="SafeMargins/Content" unique_id=815914515]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="BombGrid" type="GridContainer" parent="SafeMargins/Content/BoardArea"]
+[node name="BombGrid" type="GridContainer" parent="SafeMargins/Content/BoardArea" unique_id=307047575]
 unique_name_in_owner = true
 layout_mode = 2
-columns = 2
 theme_override_constants/h_separation = 22
 theme_override_constants/v_separation = 22
+columns = 2
