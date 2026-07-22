@@ -166,6 +166,23 @@ func grant_skin(skin_id: String) -> bool:
 	return true
 
 
+func purchase_skin_with_gems(skin_id: String, gem_cost: int) -> bool:
+	## Debits Gems and grants ownership in one revision so a crash cannot leave a
+	## player charged without the skin. ShopManager validates catalog metadata.
+	var safe_id := skin_id.strip_edges()
+	if (
+		safe_id.is_empty()
+		or gem_cost <= 0
+		or _data.owned_skin_ids.has(safe_id)
+		or get_currency_balance("gems") < gem_cost
+	):
+		return false
+	_data.currencies["gems"] = get_currency_balance("gems") - gem_cost
+	_data.owned_skin_ids.append(safe_id)
+	_commit_local_change()
+	return true
+
+
 func set_selected_skin(skin_id: String) -> bool:
 	## Equipping never grants ownership; SkinManager validates catalog membership.
 	var safe_id := skin_id.strip_edges()

@@ -1,0 +1,268 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/shop_screen.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Assets/UI/gem_sapphire.svg" id="2_gem"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/SecondaryButton.tscn" id="3_secondary"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/ShopDetailDialog.tscn" id="4_detail"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/ShopConfirmationDialog.tscn" id="5_confirm"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/ShopFeedbackDialog.tscn" id="6_feedback"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_gems"]
+bg_color = Color(0.985, 0.972, 0.945, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 5
+border_color = Color(0.38, 0.36, 0.32, 0.24)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+shadow_color = Color(0.08, 0.08, 0.07, 0.12)
+shadow_size = 7
+shadow_offset = Vector2(0, 5)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_tab"]
+bg_color = Color(0.9, 0.87, 0.81, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_tab_hover"]
+bg_color = Color(0.95, 0.91, 0.82, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_tab_active"]
+bg_color = Color(0.2, 0.24, 0.25, 1)
+border_width_bottom = 5
+border_color = Color(0.08, 0.1, 0.1, 0.55)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_empty"]
+bg_color = Color(0.93, 0.9, 0.85, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 6
+border_color = Color(0.34, 0.32, 0.29, 0.22)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[node name="ShopScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.968627, 0.952941, 0.92549, 1)
+
+[node name="SafeMargins" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 42
+theme_override_constants/margin_top = 34
+theme_override_constants/margin_right = 42
+theme_override_constants/margin_bottom = 34
+
+[node name="Content" type="VBoxContainer" parent="SafeMargins"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Header" type="HBoxContainer" parent="SafeMargins/Content"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="BackButton" parent="SafeMargins/Content/Header" instance=ExtResource("3_secondary")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(142, 82)
+layout_mode = 2
+text = "<  BACK"
+
+[node name="TitleBlock" type="VBoxContainer" parent="SafeMargins/Content/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Eyebrow" type="Label" parent="SafeMargins/Content/Header/TitleBlock"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.51, 0.45, 1)
+theme_override_font_sizes/font_size = 20
+text = "CATALOG"
+
+[node name="Title" type="Label" parent="SafeMargins/Content/Header/TitleBlock"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.13, 0.16, 0.17, 1)
+theme_override_font_sizes/font_size = 58
+text = "SHOP"
+
+[node name="GemPanel" type="PanelContainer" parent="SafeMargins/Content/Header"]
+custom_minimum_size = Vector2(184, 82)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_gems")
+
+[node name="GemRow" type="HBoxContainer" parent="SafeMargins/Content/Header/GemPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="GemIcon" type="TextureRect" parent="SafeMargins/Content/Header/GemPanel/GemRow"]
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+texture = ExtResource("2_gem")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GemValue" type="Label" parent="SafeMargins/Content/Header/GemPanel/GemRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.14, 0.17, 0.18, 1)
+theme_override_font_sizes/font_size = 32
+text = "0"
+
+[node name="Tabs" type="HBoxContainer" parent="SafeMargins/Content"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SkinsTab" type="Button" parent="SafeMargins/Content/Tabs"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+button_group = null
+theme_override_colors/font_color = Color(0.23, 0.25, 0.25, 1)
+theme_override_colors/font_pressed_color = Color(0.98, 0.96, 0.92, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBox_tab")
+theme_override_styles/hover = SubResource("StyleBox_tab_hover")
+theme_override_styles/pressed = SubResource("StyleBox_tab_active")
+text = "SKINS"
+
+[node name="PowerUpsTab" type="Button" parent="SafeMargins/Content/Tabs"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+theme_override_colors/font_color = Color(0.23, 0.25, 0.25, 1)
+theme_override_colors/font_pressed_color = Color(0.98, 0.96, 0.92, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBox_tab")
+theme_override_styles/hover = SubResource("StyleBox_tab_hover")
+theme_override_styles/pressed = SubResource("StyleBox_tab_active")
+text = "POWER-UPS"
+
+[node name="PurchasesTab" type="Button" parent="SafeMargins/Content/Tabs"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+theme_override_colors/font_color = Color(0.23, 0.25, 0.25, 1)
+theme_override_colors/font_pressed_color = Color(0.98, 0.96, 0.92, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBox_tab")
+theme_override_styles/hover = SubResource("StyleBox_tab_hover")
+theme_override_styles/pressed = SubResource("StyleBox_tab_active")
+text = "PURCHASES"
+
+[node name="SectionTitle" type="Label" parent="SafeMargins/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.16, 0.19, 0.2, 1)
+theme_override_font_sizes/font_size = 31
+text = "BOMB SKINS"
+
+[node name="Scroll" type="ScrollContainer" parent="SafeMargins/Content"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ScrollContent" type="VBoxContainer" parent="SafeMargins/Content/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="Items" type="VBoxContainer" parent="SafeMargins/Content/Scroll/ScrollContent"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="EmptyState" type="VBoxContainer" parent="SafeMargins/Content/Scroll/ScrollContent"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 390)
+layout_mode = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="EmptyPanel" type="PanelContainer" parent="SafeMargins/Content/Scroll/ScrollContent/EmptyState"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBox_empty")
+
+[node name="EmptyMargin" type="MarginContainer" parent="SafeMargins/Content/Scroll/ScrollContent/EmptyState/EmptyPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 50
+theme_override_constants/margin_top = 50
+theme_override_constants/margin_right = 50
+theme_override_constants/margin_bottom = 50
+
+[node name="Copy" type="VBoxContainer" parent="SafeMargins/Content/Scroll/ScrollContent/EmptyState/EmptyPanel/EmptyMargin"]
+layout_mode = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="Symbol" type="Label" parent="SafeMargins/Content/Scroll/ScrollContent/EmptyState/EmptyPanel/EmptyMargin/Copy"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.24, 0.27, 0.27, 0.66)
+theme_override_font_sizes/font_size = 64
+text = "—"
+horizontal_alignment = 1
+
+[node name="EmptyTitle" type="Label" parent="SafeMargins/Content/Scroll/ScrollContent/EmptyState/EmptyPanel/EmptyMargin/Copy"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.15, 0.18, 0.19, 1)
+theme_override_font_sizes/font_size = 34
+text = "NOTHING HERE YET"
+horizontal_alignment = 1
+
+[node name="EmptyDescription" type="Label" parent="SafeMargins/Content/Scroll/ScrollContent/EmptyState/EmptyPanel/EmptyMargin/Copy"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.38, 0.37, 0.34, 1)
+theme_override_font_sizes/font_size = 23
+text = "New catalog entries will appear here automatically."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="ShopDetailDialog" parent="." instance=ExtResource("4_detail")]
+
+[node name="ShopConfirmationDialog" parent="." instance=ExtResource("5_confirm")]
+
+[node name="ShopFeedbackDialog" parent="." instance=ExtResource("6_feedback")]

@@ -81,6 +81,7 @@ func show_home_if_ready() -> void:
 	elif not CloudSaveManager.is_restore_ready():
 		set_current_screen(ScreenName.SIGN_IN)
 	else:
+		UIManager.show_home()
 		set_current_screen(ScreenName.HOME)
 
 

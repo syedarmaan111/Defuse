@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://defuse_main_scene"]
+[gd_scene load_steps=13 format=3 uid="uid://defuse_main_scene"]
 
 [ext_resource type="Script" path="res://Scripts/main.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/HomeScreen.tscn" id="1_home"]
@@ -9,6 +9,9 @@
 [ext_resource type="PackedScene" path="res://Scenes/UI/SignInScreen.tscn" id="6_signin"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/ConnectionStatusOverlay.tscn" id="7_connection"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/SaveConflictDialog.tscn" id="8_conflict"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/ShopScreen.tscn" id="9_shop"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/ProfileScreen.tscn" id="10_profile"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/ExitConfirmationDialog.tscn" id="11_exit"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_script")
@@ -16,6 +19,12 @@ script = ExtResource("1_script")
 [node name="ScreenRoot" type="CanvasLayer" parent="."]
 
 [node name="HomeScreen" parent="ScreenRoot" instance=ExtResource("1_home")]
+visible = false
+
+[node name="ShopScreen" parent="ScreenRoot" instance=ExtResource("9_shop")]
+visible = false
+
+[node name="ProfileScreen" parent="ScreenRoot" instance=ExtResource("10_profile")]
 visible = false
 
 [node name="Gameplay" parent="ScreenRoot" instance=ExtResource("2_gameplay")]
@@ -42,4 +51,7 @@ layer = 20
 [node name="ConnectionStatusOverlay" parent="NotificationRoot" instance=ExtResource("7_connection")]
 
 [node name="SaveConflictDialog" parent="NotificationRoot" instance=ExtResource("8_conflict")]
+visible = false
+
+[node name="ExitConfirmationDialog" parent="NotificationRoot" instance=ExtResource("11_exit")]
 visible = false

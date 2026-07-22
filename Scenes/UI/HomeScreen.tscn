@@ -172,7 +172,8 @@ texture = ExtResource("2_gem")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Value" type="Label" parent="SafeMargins/Content/CurrencyRow/GemDisplay/Row" unique_id=1802760157]
+[node name="GemValue" type="Label" parent="SafeMargins/Content/CurrencyRow/GemDisplay/Row" unique_id=1802760157]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.15, 0.18, 0.19, 1)
 theme_override_font_sizes/font_size = 38
@@ -211,6 +212,7 @@ theme_override_font_sizes/font_size = 36
 text = "▶     PLAY     ›"
 
 [node name="ShopButton" type="Button" parent="SafeMargins/Content" unique_id=1260767080]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 112)
 layout_mode = 2
 focus_mode = 0
@@ -226,7 +228,8 @@ theme_override_styles/hover = SubResource("StyleBox_shop_hover")
 text = "🛒     SHOP     ›"
 script = ExtResource("5_animated")
 
-[node name="OptionsButton" type="Button" parent="SafeMargins/Content" unique_id=481684770]
+[node name="ProfileButton" type="Button" parent="SafeMargins/Content" unique_id=481684770]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 112)
 layout_mode = 2
 focus_mode = 0
@@ -239,7 +242,7 @@ theme_override_font_sizes/font_size = 35
 theme_override_styles/normal = SubResource("StyleBox_options")
 theme_override_styles/pressed = SubResource("StyleBox_options_pressed")
 theme_override_styles/hover = SubResource("StyleBox_options_hover")
-text = "⚙     OPTIONS     ›"
+text = "PROFILE"
 script = ExtResource("5_animated")
 
 [node name="FooterSpacer" type="Control" parent="SafeMargins/Content" unique_id=22752113]
@@ -264,7 +267,8 @@ theme_override_font_sizes/font_size = 30
 text = "BEST SCORE"
 horizontal_alignment = 1
 
-[node name="Value" type="Label" parent="SafeMargins/Content/BestScore" unique_id=565190205]
+[node name="BestScoreValue" type="Label" parent="SafeMargins/Content/BestScore" unique_id=565190205]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.15, 0.18, 0.19, 1)
 theme_override_font_sizes/font_size = 76

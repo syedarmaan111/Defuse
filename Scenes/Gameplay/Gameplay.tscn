@@ -1,8 +1,9 @@
-[gd_scene format=3 uid="uid://lo5dlfy68aua"]
+[gd_scene load_steps=6 format=3 uid="uid://lo5dlfy68aua"]
 
 [ext_resource type="Script" uid="uid://c1vu5f5xbk651" path="res://Scripts/Gameplay/gameplay.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://bakt7pms016bm" path="res://Assets/UI/gem_sapphire.svg" id="3_gem"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/Components/BannerAdSlot.tscn" id="4_banner"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/LifeHeart.tscn" id="5_heart"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_hud"]
 bg_color = Color(0.968627, 0.94902, 0.913725, 0.9)
@@ -109,12 +110,28 @@ theme_override_colors/font_color = Color(0.156863, 0.188235, 0.2, 1)
 theme_override_font_sizes/font_size = 30
 text = "0"
 
-[node name="Lives" type="Label" parent="SafeMargins/Content" unique_id=139245710]
+[node name="Lives" type="HBoxContainer" parent="SafeMargins/Content" unique_id=139245710]
 layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="Caption" type="Label" parent="SafeMargins/Content/Lives"]
 theme_override_colors/font_color = Color(0.4, 0.28, 0.25, 1)
-theme_override_font_sizes/font_size = 26
-text = "LIVES   ♥ ♥ ♥"
-horizontal_alignment = 1
+theme_override_font_sizes/font_size = 28
+text = "LIVES"
+vertical_alignment = 1
+
+[node name="Life1" parent="SafeMargins/Content/Lives" instance=ExtResource("5_heart")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Life2" parent="SafeMargins/Content/Lives" instance=ExtResource("5_heart")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Life3" parent="SafeMargins/Content/Lives" instance=ExtResource("5_heart")]
+unique_name_in_owner = true
+layout_mode = 2
 
 [node name="BoardArea" type="CenterContainer" parent="SafeMargins/Content" unique_id=815914515]
 unique_name_in_owner = true
