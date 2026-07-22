@@ -4,15 +4,31 @@
 
 DEFUSE is a portrait Android game built in Godot 4.6. The player defuses armed bombs before they explode, earns Gems and power-ups, unlocks cosmetic skins, and progresses through increasingly difficult stages.
 
+> **Payment hold (user-directed):** Real-money payments for skins, power-ups,
+> offers, and any other content are postponed indefinitely. Do not add billing
+> UI, paid catalog entries, provider integration, product IDs, purchase restore,
+> or paid-entitlement behavior until the user explicitly asks to resume this
+> work. Existing provider-neutral shell code may remain dormant for forward
+> compatibility, but it is not an active feature or milestone dependency.
+
 This document is the implementation roadmap. Its rules supersede older conflicting statements in `GAME_SPEC.md`, `UI_SPEC.md`, `README_FOR_CODEX.md`, and earlier revisions of this plan. The user-approved UI references in `Assets/UI/UI mockups/` define the visual language and quality bar; they are not flattened UI assets to place on screens.
 
 ## Current Repository Status
 
-- Project configuration, `Main.tscn`, and basic Home/Gameplay placeholder/Pause/Game Over navigation exist.
-- `GameManager`, `SaveManager`, and `AudioManager` exist as small local-only foundations.
-- The current UI shell uses cropped mockup images and fixed design coordinates. It must be refactored before expanding gameplay or menus.
-- Bomb grids, bomb state/timers, score/lives, rewards, commerce, cloud saves, network gating, Profile, Shop, and power-up systems are not implemented.
-- `PROJECT_PLAN.md` and `Assets/UI/UI mockups/` are user-owned workspace changes and are preserved as the basis for this consolidated plan.
+- Milestones 1 through 9 are complete.
+- `Main.tscn` coordinates responsive Home, Shop, Profile, Gameplay, network,
+  sign-in, Pause, and Game Over scenes built from real Godot `Control` nodes.
+- Manager-owned, signal-driven foundations cover launch gating, cloud/local
+  saves, progression, catalog content, inventory, navigation, and run state.
+- Core gameplay now includes reusable bomb cells, responsive 2x2 through 4x4
+  grids, independent timers, supplied armed animation/audio, defusal, localized
+  explosions, score, lives, exact active-bomb counts, all five stages, pause
+  gating, guarded resolution, wave-safe stage changes, game-over finalization,
+  best-score persistence, and an enlarged finger-friendly 4x4 layout.
+- Rewards, power-up effects, checkpoint choices, countdown/revive, ads,
+  settings, and release work remain in Milestones 10 through 14.
+- Live billing and real-money content remain deliberately unimplemented under
+  the payment hold above.
 
 ## Non-Negotiable UI Architecture
 
@@ -59,7 +75,6 @@ Scenes/UI/
 	SaveConflictDialog.tscn
 	ConnectionStatusOverlay.tscn
 	ReviveOverlay.tscn
-	StagePopup.tscn
   UIManagerRoot.tscn
 ```
 
@@ -127,7 +142,7 @@ cloud_sync_failed(error_code)
 cloud_conflict_detected(local_summary, cloud_summary)
 ```
 
-## Data-Driven Content, Economy, and Commerce
+## Data-Driven Content and Economy
 
 ### Content Resources
 
@@ -158,14 +173,19 @@ LIFETIME_SCORE_CHECKPOINT
 REAL_MONEY_PURCHASE
 ```
 
+`REAL_MONEY_PURCHASE` is reserved schema metadata only while the payment hold
+is active. The game must not author or expose paid acquisition options until
+the user explicitly resumes payment work.
+
 ### Economy Rules
 
 - Gems are earn-only gameplay currency. The game never sells, tops up, exchanges, or provides a Gem-purchase screen.
 - Remove the `+` Gem purchase affordance from all implemented screens.
-- Skins may provide a Gem-earned option and/or a real-money option. Either successful option permanently grants ownership.
-- Power-ups may provide a 500-lifetime-defusal checkpoint option and/or a real-money option. They never use Gem purchase.
+- Skins may be default grants or earned with Gems while payments are deferred.
+- Power-ups are unlocked through the 500-lifetime-defusal checkpoint flow while
+  payments are deferred. They never use Gem purchase.
 - `default_bomb` is the sole initial skin and is granted, owned, equipped, and selected on first launch.
-- A real-money entitlement unlocks content permanently and grants no Gems.
+- No real-money entitlement is offered or processed during the payment hold.
 
 ### Managers
 
@@ -192,7 +212,8 @@ AdManager
 - `ShopManager`: catalog queries, category filtering, and acquisition orchestration.
 - `SkinManager`: ownership, equip validation, and current skin gameplay assets.
 - `PowerUpManager`: ownership, quantities, checkpoint eligibility, automatic effect activation.
-- `CommerceManager`: provider-neutral real-money purchase and restore interface.
+- `CommerceManager`: dormant provider-neutral compatibility boundary; it must
+  remain unavailable and must not be expanded while payments are deferred.
 - `SaveManager`: schema validation, migration, local cache persistence, and cloud-sync requests.
 - `GameManager`: run state, gameplay clocks, score, lives, stages, countdown, and revive grace.
 - `AdManager`: banner/interstitial/rewarded-ad behavior only.
@@ -240,10 +261,14 @@ Migrate legacy `total_gems` to `currencies["gems"]` and `selected_skin` to `equi
 
 ### Shop
 
-- Provide Skins, Power-ups, and Purchase sections from dynamic catalog data.
+- Provide Skins and Power-ups sections from dynamic catalog data. The existing
+  Purchases section remains an intentional unavailable/empty state during the
+  payment hold and may be removed in later UI polish if the user requests it.
 - The Skins section initially renders only the owned/equipped/selected default bomb.
-- Power-ups and Purchase must render safe intentional empty states until catalog entries exist.
-- Cards render locked, purchasable, checkpoint-eligible, owned, selected, and equipped states from managers/signals.
+- Power-ups render their locked checkpoint-eligible catalog entries. Purchases
+  renders a safe intentional unavailable/empty state during the payment hold.
+- Cards render locked, Gem-purchasable, checkpoint-eligible, owned, selected,
+  and equipped states from managers/signals. Paid controls stay hidden.
 - Confirmation, insufficient-Gem, purchase failure, and success feedback use reusable dialogs/notifications.
 
 ### Profile
@@ -256,19 +281,26 @@ Profile displays selected skin preview, best score, lifetime defusals, earned Ge
 - Persist the queue before presentation.
 - After Game Over, `PowerUpUnlockOverlay` reuses the shop Power-up catalog/card layout, filtering to locked checkpoint-eligible entries and replacing acquisition controls with `CHOOSE`.
 - Claim exactly one item per pending choice. Real-money buttons are hidden in checkpoint-choice mode.
-- Purchases remove items from future checkpoint candidates.
+- Any future paid unlock behavior and its checkpoint interaction remain
+  undecided until payment work is explicitly resumed.
 
 ## Gameplay Rules
 
 ### Stages
 
 ```text
-Stage 1: 2x2 grid, 1 active bomb, 3.8s, advance at 10 defusals
-Stage 2: 2x2 grid, 2 active bombs, 3.5s, advance at 25 defusals
-Stage 3: 3x3 grid, 2 active bombs, 3.2s, advance at 45 defusals
-Stage 4: 3x3 grid, 3 active bombs, 3.0s, advance at 70 defusals
-Stage 5: 4x4 grid, 3 active bombs, 2.8s, terminal stage
+Stage 1: 2x2 grid, 1 active bomb, 2.60s, advance at 10 defusals
+Stage 2: 2x2 grid, 2 active bombs, 2.25s, advance at 25 defusals
+Stage 3: 3x3 grid, 2 active bombs, 1.95s, advance at 45 defusals
+Stage 4: 3x3 grid, 3 active bombs, 1.70s, advance at 70 defusals
+Stage 5: 4x4 grid, 3 active bombs, 1.50s, terminal stage
 ```
+
+When a score threshold is reached, queue the next stage and stop spawning
+replacement bombs. Existing active bombs keep their individual timers. After
+the last bomb in that wave resolves, replace the grid and arm a completely
+fresh stage-appropriate set. Stage changes happen silently; no stage, grid, or
+active-count text is displayed in the HUD or in a popup.
 
 ### Bomb Interaction
 
@@ -307,7 +339,9 @@ Bombs guard against double resolution. Bomb explosion is local; neighboring bomb
 - After one normal no-fill/failure, clear the pending flag and allow play; never create an infinite retry block.
 - Rewarded revive is unavailable offline and proceeds directly to normal Game Over.
 - Never count an offline/failed request as an impression or reward.
-- Real ad SDK, Google Play Billing, ad unit IDs, and product IDs are integrated only in Android release readiness.
+- A real ad SDK and ad unit IDs are integrated only in Android release
+  readiness. Google Play Billing and product IDs are excluded while the payment
+  hold is active.
 
 ## Final Milestones
 
@@ -317,14 +351,33 @@ Bombs guard against double resolution. Bomb explosion is local; neighboring bomb
 4. **Versioned Local/Cloud Save Foundation** — Add migration, cloud restore/sync, conflict dialog, sync queue, and uninstall/reinstall recovery validation.
 5. **Content Catalog and Progression Managers** — Add Resource definitions, catalog, save ownership model, and managers.
 6. **Navigation and Profile** — Add Home/Shop/Profile navigation and basic Profile data presentation.
-7. **Data-Driven Shop and Commerce Shell** — Implement dynamic shop cards, skin details, acquisition options, confirmations, and provider-neutral commerce.
-8. **Core Gameplay Foundation** — Implement bombs, responsive grids, HUD, score, lives, stages, and state signals.
-9. **Bomb Resolution and Difficulty** — Add timers, defusal, wrong-tap explosions, life loss, stage transitions, armed visuals, and effects.
+7. **Data-Driven Shop and Commerce Shell** — Complete. Dynamic shop cards,
+   skin details, earned acquisition options, confirmations, and a dormant
+   provider-neutral compatibility boundary are in place. No live payments.
+8. **Core Gameplay Foundation** — Complete. Reusable bombs, responsive grids,
+   HUD, score, lives, all five stages, pause-safe input, best-score persistence,
+   and manager-owned state signals are in place.
+9. **Bomb Resolution and Difficulty** — Complete. Independent timers, defusal,
+   guarded wrong-tap and timeout explosions, life loss, wave-safe stage
+   transitions, supplied armed frames/audio, red danger fill, and localized
+   effects are in place.
 10. **Timed Rewards and Power-Up Effects** — Add reward spawning, pulsing icons, Gem collection, and all approved automatic power-ups.
 11. **Lifetime Score and Checkpoint Choice** — Add 500-score queue, reused power-up selection overlay, and cloud-safe claim flow.
 12. **Countdown, Pause, and Rewarded Revive** — Add pre-play countdown, one revive/run, five-second timer grace, and responsive overlays.
-13. **Ads, Settings, Audio, and Monetization Integration** — Add ad safeguards, settings, audio controls, real Play Billing integration, and purchase restoration.
-14. **Android Release Readiness and Final Validation** — Configure Play Console, export/signing, product/ad identifiers, and complete end-to-end tests.
+13. **Ads, Settings, and Audio** — Add ad safeguards, settings, audio controls,
+   and release-safe ad integration. Billing and purchase restoration are not in
+   scope.
+14. **Android Release Readiness and Final Validation** — Configure Play
+   Console, export/signing, ad identifiers, and complete end-to-end tests. Paid
+   product configuration is excluded.
+
+### Deferred, Unscheduled Work
+
+- **Payments and Paid Content** — Only after an explicit future user request:
+  decide whether skins and/or power-ups should be sold, then design the billing
+  UX, author paid catalog entries, integrate Google Play Billing, configure
+  product IDs, restore purchases, test entitlements, and update release checks.
+  This is not assigned a milestone number and does not block Milestones 8–14.
 
 ## Required Validation
 
@@ -341,7 +394,9 @@ Bombs guard against double resolution. Bomb explosion is local; neighboring bomb
 - Start, resume, and revive each show one 3–2–1 countdown with no gameplay time advancing.
 - Revive grace begins at 75% timer speed and reaches normal speed after five gameplay seconds.
 - Offline interstitial deferral is persisted and attempted once after reconnection; ad failure never traps the player.
-- All save, commerce, inventory, and currency UI refreshes are signal-driven.
+- All save, inventory, and currency UI refreshes are signal-driven.
+- No paid acquisition button, billing request, product ID, or purchase-restore
+  path is active while the payment hold remains in effect.
 
 ## Explicit Defaults
 

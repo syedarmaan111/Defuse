@@ -92,31 +92,31 @@ Progression:
 Stage 1
 Grid: 2x2
 Active bombs: 1
-Timer: 3.8s
+Timer: 2.60s
 Advance after 10 successful defusals.
 
 Stage 2
 Grid: 2x2
 Active bombs: 2
-Timer: 3.5s
+Timer: 2.25s
 Advance after 25 total successful defusals.
 
 Stage 3
 Grid: 3x3
 Active bombs: 2
-Timer: 3.2s
+Timer: 1.95s
 Advance after 45 total successful defusals.
 
 Stage 4
 Grid: 3x3
 Active bombs: 3
-Timer: 3.0s
+Timer: 1.70s
 Advance after 70 total successful defusals.
 
 Stage 5
 Grid: 4x4
 Active bombs: 3
-Timer: 2.8s
+Timer: 1.50s
 
 Terminal difficulty.
 

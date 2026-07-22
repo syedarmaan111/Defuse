@@ -1,0 +1,80 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Gameplay/bomb_cell.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Assets/Bomb/bomb_reference.png" id="2_bomb"]
+[ext_resource type="Shader" path="res://Shaders/bomb_alpha_cleanup.gdshader" id="3_shader"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bomb"]
+atlas = ExtResource("2_bomb")
+region = Rect2(250, 180, 560, 750)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_cleanup"]
+resource_local_to_scene = true
+shader = ExtResource("3_shader")
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_explosion"]
+bg_color = Color(1, 0.419608, 0.0470588, 0.82)
+border_width_left = 8
+border_width_top = 8
+border_width_right = 8
+border_width_bottom = 8
+border_color = Color(1, 0.811765, 0.219608, 0.95)
+corner_radius_top_left = 96
+corner_radius_top_right = 96
+corner_radius_bottom_right = 96
+corner_radius_bottom_left = 96
+shadow_color = Color(0.8, 0.0901961, 0.0156863, 0.55)
+shadow_size = 18
+
+[node name="BombCell" type="Control"]
+custom_minimum_size = Vector2(180, 180)
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 1
+script = ExtResource("1_script")
+
+[node name="ExplosionFlash" type="Panel" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_explosion")
+
+[node name="BombImage" type="TextureRect" parent="."]
+unique_name_in_owner = true
+texture_filter = 4
+material = SubResource("ShaderMaterial_cleanup")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 5.0
+offset_right = -12.0
+offset_bottom = -5.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("AtlasTexture_bomb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TouchTarget" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+flat = true
