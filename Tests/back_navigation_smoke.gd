@@ -17,7 +17,8 @@ func _ready() -> void:
 	assert(not exit_dialog.visible)
 	assert(GameManager.get_current_screen_name() == "home")
 
-	GameManager.set_current_screen(GameManager.ScreenName.GAMEPLAY)
+	GameManager.start_game()
+	GameManager._finish_countdown()
 	main._handle_mobile_back()
 	assert(GameManager.get_current_screen_name() == "pause")
 	assert(main.get_node("OverlayRoot/PauseMenu").visible)
@@ -31,4 +32,3 @@ func _ready() -> void:
 
 	print("Back navigation smoke test passed.")
 	get_tree().quit()
-

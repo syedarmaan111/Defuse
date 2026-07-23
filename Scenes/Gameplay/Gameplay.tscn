@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://lo5dlfy68aua"]
+[gd_scene load_steps=10 format=3 uid="uid://lo5dlfy68aua"]
 
 [ext_resource type="Script" uid="uid://c1vu5f5xbk651" path="res://Scripts/Gameplay/gameplay.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://Resources/Content/GemIcon.tres" id="3_gem"]
@@ -35,17 +35,45 @@ shadow_color = Color(0.05, 0.16, 0.25, 0.4)
 shadow_size = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_chain_status"]
-bg_color = Color(0.12, 0.32, 0.22, 0.92)
+bg_color = Color(0.38, 0.29, 0.04, 0.94)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.38, 1, 0.58, 0.92)
+border_color = Color(1, 0.86, 0.18, 0.96)
 corner_radius_top_left = 18
 corner_radius_top_right = 18
 corner_radius_bottom_right = 18
 corner_radius_bottom_left = 18
-shadow_color = Color(0.05, 0.2, 0.1, 0.4)
+shadow_color = Color(0.42, 0.29, 0.02, 0.52)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_super_defuse_glow"]
+bg_color = Color(1, 1, 1, 0)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(1, 0.96, 0.72, 0.5)
+corner_radius_top_left = 30
+corner_radius_top_right = 30
+corner_radius_bottom_right = 30
+corner_radius_bottom_left = 30
+shadow_color = Color(1, 0.9, 0.45, 0.18)
+shadow_size = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_grace_status"]
+bg_color = Color(0.42, 0.27, 0.08, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.78, 0.3, 0.95)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0.2, 0.12, 0.03, 0.42)
 shadow_size = 8
 
 [node name="Gameplay" type="Control" unique_id=372479178]
@@ -175,6 +203,14 @@ theme_override_constants/h_separation = 22
 theme_override_constants/v_separation = 22
 columns = 2
 
+[node name="SuperDefuseGlow" type="Panel" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 7
+layout_mode = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_super_defuse_glow")
+
 [node name="SlowMotionTint" type="ColorRect" parent="."]
 unique_name_in_owner = true
 visible = false
@@ -207,7 +243,7 @@ layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_top = 188.0
-offset_bottom = 304.0
+offset_bottom = 370.0
 grow_horizontal = 2
 mouse_filter = 2
 theme_override_constants/separation = 8
@@ -243,8 +279,26 @@ theme_override_styles/panel = SubResource("StyleBox_chain_status")
 [node name="ChainDefuseLabel" type="Label" parent="EffectStatus/ChainDefuseStatus"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 1, 0.92, 1)
+theme_override_colors/font_color = Color(1, 0.98, 0.78, 1)
 theme_override_font_sizes/font_size = 24
-text = "CHAIN DEFUSE  •  6.0s"
+text = "SUPER DEFUSE  •  6.0s"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ReviveGraceStatus" type="PanelContainer" parent="EffectStatus"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(540, 52)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_grace_status")
+
+[node name="ReviveGraceLabel" type="Label" parent="EffectStatus/ReviveGraceStatus"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.96, 0.82, 1)
+theme_override_font_sizes/font_size = 23
+text = "REVIVE GRACE  •  5.0s  •  TIMERS ×0.75"
 horizontal_alignment = 1
 vertical_alignment = 1

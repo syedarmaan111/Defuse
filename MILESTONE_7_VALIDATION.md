@@ -21,7 +21,7 @@
 
 - Skins renders the owned and equipped Default Bomb because it is the only
   supplied skin Resource.
-- Power-ups renders all six defined items as locked 1,500-lifetime-defusal
+- Power-ups renders all six defined items as locked 1,000-lifetime-defusal
   checkpoint choices. Claiming them remains Milestone 11.
 - Purchases renders a safe empty state because no paid offers are authored.
 - Adding a normal future catalog Resource automatically adds a card and detail

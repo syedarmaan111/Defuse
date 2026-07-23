@@ -1,8 +1,8 @@
-[gd_scene load_steps=14 format=3 uid="uid://defuse_main_scene"]
+[gd_scene format=3 uid="uid://y0oo5rqiusx2"]
 
-[ext_resource type="Script" path="res://Scripts/main.gd" id="1_script"]
-[ext_resource type="PackedScene" path="res://Scenes/UI/HomeScreen.tscn" id="1_home"]
-[ext_resource type="PackedScene" path="res://Scenes/Gameplay/Gameplay.tscn" id="2_gameplay"]
+[ext_resource type="PackedScene" uid="uid://2bhrtg27ajlf" path="res://Scenes/UI/HomeScreen.tscn" id="1_home"]
+[ext_resource type="Script" uid="uid://dtdt0etefh2q2" path="res://Scripts/main.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://lo5dlfy68aua" path="res://Scenes/Gameplay/Gameplay.tscn" id="2_gameplay"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/PauseMenu.tscn" id="3_pause"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/GameOverScreen.tscn" id="4_gameover"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/NetworkRequiredScreen.tscn" id="5_network"]
@@ -13,49 +13,57 @@
 [ext_resource type="PackedScene" path="res://Scenes/UI/ProfileScreen.tscn" id="10_profile"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/ExitConfirmationDialog.tscn" id="11_exit"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/PowerUpUnlockOverlay.tscn" id="12_power_unlock"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/PrePlayCountdownOverlay.tscn" id="13_countdown"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/SettingsScreen.tscn" id="14_settings"]
 
-[node name="Main" type="Node"]
+[node name="Main" type="Node" unique_id=96707744]
 script = ExtResource("1_script")
 
-[node name="ScreenRoot" type="CanvasLayer" parent="."]
+[node name="ScreenRoot" type="CanvasLayer" parent="." unique_id=1188427095]
 
-[node name="HomeScreen" parent="ScreenRoot" instance=ExtResource("1_home")]
+[node name="HomeScreen" parent="ScreenRoot" unique_id=51571482 instance=ExtResource("1_home")]
 visible = false
 
-[node name="ShopScreen" parent="ScreenRoot" instance=ExtResource("9_shop")]
+[node name="ShopScreen" parent="ScreenRoot" unique_id=1816676946 instance=ExtResource("9_shop")]
 visible = false
 
-[node name="ProfileScreen" parent="ScreenRoot" instance=ExtResource("10_profile")]
+[node name="ProfileScreen" parent="ScreenRoot" unique_id=1865986922 instance=ExtResource("10_profile")]
 visible = false
 
-[node name="Gameplay" parent="ScreenRoot" instance=ExtResource("2_gameplay")]
+[node name="SettingsScreen" parent="ScreenRoot" instance=ExtResource("14_settings")]
 visible = false
 
-[node name="NetworkRequiredScreen" parent="ScreenRoot" instance=ExtResource("5_network")]
+[node name="Gameplay" parent="ScreenRoot" unique_id=155457887 instance=ExtResource("2_gameplay")]
 visible = false
 
-[node name="SignInScreen" parent="ScreenRoot" instance=ExtResource("6_signin")]
+[node name="NetworkRequiredScreen" parent="ScreenRoot" unique_id=994778217 instance=ExtResource("5_network")]
 visible = false
 
-[node name="OverlayRoot" type="CanvasLayer" parent="."]
+[node name="SignInScreen" parent="ScreenRoot" unique_id=773301406 instance=ExtResource("6_signin")]
+visible = false
+
+[node name="OverlayRoot" type="CanvasLayer" parent="." unique_id=929178024]
 layer = 10
 
-[node name="PauseMenu" parent="OverlayRoot" instance=ExtResource("3_pause")]
+[node name="PauseMenu" parent="OverlayRoot" unique_id=1233082002 instance=ExtResource("3_pause")]
 visible = false
 
-[node name="GameOverScreen" parent="OverlayRoot" instance=ExtResource("4_gameover")]
+[node name="GameOverScreen" parent="OverlayRoot" unique_id=527092809 instance=ExtResource("4_gameover")]
 visible = false
 
-[node name="NotificationRoot" type="CanvasLayer" parent="."]
+[node name="NotificationRoot" type="CanvasLayer" parent="." unique_id=1588251436]
 layer = 20
 
-[node name="ConnectionStatusOverlay" parent="NotificationRoot" instance=ExtResource("7_connection")]
+[node name="ConnectionStatusOverlay" parent="NotificationRoot" unique_id=1772600173 instance=ExtResource("7_connection")]
 
-[node name="SaveConflictDialog" parent="NotificationRoot" instance=ExtResource("8_conflict")]
+[node name="SaveConflictDialog" parent="NotificationRoot" unique_id=1089274209 instance=ExtResource("8_conflict")]
 visible = false
 
-[node name="ExitConfirmationDialog" parent="NotificationRoot" instance=ExtResource("11_exit")]
+[node name="ExitConfirmationDialog" parent="NotificationRoot" unique_id=522383561 instance=ExtResource("11_exit")]
 visible = false
 
-[node name="PowerUpUnlockOverlay" parent="NotificationRoot" instance=ExtResource("12_power_unlock")]
-visible = false
+[node name="PowerUpUnlockOverlay" parent="NotificationRoot" unique_id=250523209 instance=ExtResource("12_power_unlock")]
+layout_mode = 3
+
+[node name="PrePlayCountdownOverlay" parent="NotificationRoot" instance=ExtResource("13_countdown")]
+layout_mode = 3

@@ -10,12 +10,16 @@ signal save_error(error_code: String)
 const SAVE_PATH := "user://save_data.dat"
 const LEGACY_SAVE_PATH := "user://save_data.json"
 const SAVE_PASSWORD := "defuse-local-cache-v2"
+const TEST_SAVE_PATH_ARGUMENT := "--defuse-test-save-path="
 
 var _data := SaveData.new()
 var _has_persisted_save := false
+var _active_save_path := SAVE_PATH
+var _active_legacy_save_path := LEGACY_SAVE_PATH
 
 
 func _ready() -> void:
+	_configure_debug_save_path()
 	load_save()
 
 
@@ -24,9 +28,9 @@ func load_save() -> void:
 	var loaded_dictionary: Dictionary = {}
 	var did_load := false
 
-	if FileAccess.file_exists(SAVE_PATH):
+	if FileAccess.file_exists(_active_save_path):
 		var encrypted_file := FileAccess.open_encrypted_with_pass(
-			SAVE_PATH, FileAccess.READ, SAVE_PASSWORD
+			_active_save_path, FileAccess.READ, SAVE_PASSWORD
 		)
 		if encrypted_file != null:
 			loaded_dictionary = decode_save_envelope(encrypted_file.get_as_text())
@@ -34,8 +38,12 @@ func load_save() -> void:
 
 	# The legacy file is migration input only. Once a versioned cache exists, a
 	# corrupt current save must never silently roll progress back to stale JSON.
-	if not FileAccess.file_exists(SAVE_PATH) and FileAccess.file_exists(LEGACY_SAVE_PATH):
-		var legacy_file := FileAccess.open(LEGACY_SAVE_PATH, FileAccess.READ)
+	if (
+		not FileAccess.file_exists(_active_save_path)
+		and not _active_legacy_save_path.is_empty()
+		and FileAccess.file_exists(_active_legacy_save_path)
+	):
+		var legacy_file := FileAccess.open(_active_legacy_save_path, FileAccess.READ)
 		if legacy_file != null:
 			var legacy_value = JSON.parse_string(legacy_file.get_as_text())
 			if (
@@ -50,7 +58,7 @@ func load_save() -> void:
 	if did_load:
 		# Rewriting once upgrades legacy/plain data to the current encrypted format.
 		_write_local_cache()
-	elif FileAccess.file_exists(SAVE_PATH):
+	elif FileAccess.file_exists(_active_save_path):
 		save_error.emit("local_save_invalid")
 
 	save_loaded.emit(get_snapshot())
@@ -301,6 +309,53 @@ func set_power_up_quantity(power_up_id: String, quantity: int) -> bool:
 	return true
 
 
+func get_settings() -> Dictionary:
+	return _data.settings.duplicate(true)
+
+
+func set_setting(setting_id: String, value: Variant) -> bool:
+	## SettingsManager validates supported IDs and value types before calling.
+	var safe_id := setting_id.strip_edges()
+	if safe_id.is_empty() or _data.settings.get(safe_id) == value:
+		return false
+	_data.settings[safe_id] = value
+	_commit_local_change()
+	return true
+
+
+func get_completed_run_count() -> int:
+	return _data.completed_run_count
+
+
+func has_pending_interstitial() -> bool:
+	return _data.pending_interstitial
+
+
+func record_completed_run(interstitial_interval: int = 4) -> Dictionary:
+	## Increments the run counter and schedules at most one interstitial in the
+	## same save revision. A crash can never persist one field without the other.
+	_data.completed_run_count += 1
+	if (
+		interstitial_interval > 0
+		and _data.completed_run_count % interstitial_interval == 0
+	):
+		_data.pending_interstitial = true
+	_commit_local_change()
+	return {
+		"completed_run_count": _data.completed_run_count,
+		"pending_interstitial": _data.pending_interstitial,
+	}
+
+
+func clear_pending_interstitial() -> bool:
+	## One normal provider failure consumes the opportunity so play cannot loop.
+	if not _data.pending_interstitial:
+		return false
+	_data.pending_interstitial = false
+	_commit_local_change()
+	return true
+
+
 func get_purchased_content_ids() -> Array[String]:
 	return _data.purchased_content_ids.duplicate()
 
@@ -356,7 +411,7 @@ func _commit_local_change() -> void:
 
 func _write_local_cache() -> bool:
 	var save_file := FileAccess.open_encrypted_with_pass(
-		SAVE_PATH, FileAccess.WRITE, SAVE_PASSWORD
+		_active_save_path, FileAccess.WRITE, SAVE_PASSWORD
 	)
 	if save_file == null:
 		save_error.emit("local_save_write_failed")
@@ -364,3 +419,19 @@ func _write_local_cache() -> bool:
 	save_file.store_string(encode_save_envelope(_data.to_dictionary(true)))
 	_has_persisted_save = true
 	return true
+
+
+func _configure_debug_save_path() -> void:
+	## Headless tests opt into a workspace-local cache so validation never
+	## overwrites the player's normal desktop/debug progression.
+	if not OS.is_debug_build():
+		return
+	for argument in OS.get_cmdline_user_args():
+		if not argument.begins_with(TEST_SAVE_PATH_ARGUMENT):
+			continue
+		var requested_path := argument.trim_prefix(TEST_SAVE_PATH_ARGUMENT).strip_edges()
+		if requested_path.is_empty():
+			continue
+		_active_save_path = ProjectSettings.globalize_path(requested_path)
+		_active_legacy_save_path = ""
+		return

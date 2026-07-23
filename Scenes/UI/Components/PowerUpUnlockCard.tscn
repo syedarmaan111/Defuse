@@ -34,11 +34,13 @@ corner_radius_bottom_left = 12
 
 [node name="PowerUpUnlockCard" type="PanelContainer"]
 custom_minimum_size = Vector2(0, 196)
+mouse_filter = 1
 theme_override_styles/panel = SubResource("StyleBox_card")
 script = ExtResource("1_script")
 
 [node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 18
 theme_override_constants/margin_top = 18
 theme_override_constants/margin_right = 18
@@ -46,28 +48,33 @@ theme_override_constants/margin_bottom = 18
 
 [node name="Row" type="HBoxContainer" parent="Margin"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 18
 
 [node name="IconPanel" type="PanelContainer" parent="Margin/Row"]
 custom_minimum_size = Vector2(146, 146)
 layout_mode = 2
+mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBox_icon")
 
 [node name="Icon" type="TextureRect" parent="Margin/Row/IconPanel"]
 unique_name_in_owner = true
 layout_mode = 2
 texture_filter = 4
+mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
 [node name="Copy" type="VBoxContainer" parent="Margin/Row"]
 layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 2
 theme_override_constants/separation = 7
 
 [node name="PowerUpName" type="Label" parent="Margin/Row/Copy"]
 unique_name_in_owner = true
 layout_mode = 2
+mouse_filter = 2
 theme_override_colors/font_color = Color(0.13, 0.16, 0.17, 1)
 theme_override_font_sizes/font_size = 29
 text = "POWER-UP"
@@ -76,6 +83,7 @@ text = "POWER-UP"
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
+mouse_filter = 2
 theme_override_colors/font_color = Color(0.37, 0.36, 0.32, 1)
 theme_override_font_sizes/font_size = 19
 text = "Description"
@@ -83,6 +91,7 @@ autowrap_mode = 2
 
 [node name="PermanentBadge" type="Label" parent="Margin/Row/Copy"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_colors/font_color = Color(0.31, 0.28, 0.22, 1)
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBox_badge")

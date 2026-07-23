@@ -8,6 +8,7 @@ extends Node
 @onready var home_screen: Control = $ScreenRoot/HomeScreen
 @onready var shop_screen: Control = $ScreenRoot/ShopScreen
 @onready var profile_screen: Control = $ScreenRoot/ProfileScreen
+@onready var settings_screen: Control = $ScreenRoot/SettingsScreen
 @onready var gameplay_screen: Control = $ScreenRoot/Gameplay
 @onready var network_required_screen: Control = $ScreenRoot/NetworkRequiredScreen
 @onready var sign_in_screen: Control = $ScreenRoot/SignInScreen
@@ -35,7 +36,7 @@ func _ready() -> void:
 	CloudSaveManager.cloud_conflict_detected.connect(save_conflict_dialog.show_conflict)
 	exit_confirmation_dialog.leave_confirmed.connect(_exit_application)
 	_refresh_launch_gate()
-	power_up_unlock_overlay.call_deferred("show_if_pending")
+	call_deferred("_present_pending_power_up_choice")
 
 
 func _notification(what: int) -> void:
@@ -54,6 +55,12 @@ func _handle_mobile_back() -> void:
 		return
 	if GameManager.get_current_screen_name() == "gameplay":
 		GameManager.pause_game()
+		return
+	if (
+		GameManager.get_current_screen_name() == "home"
+		and UIManager.get_current_menu_screen_name() == "settings"
+	):
+		UIManager.show_profile()
 		return
 	exit_confirmation_dialog.show_confirmation()
 
@@ -79,6 +86,10 @@ func _on_screen_changed(screen_name: String) -> void:
 			CloudSaveManager.restore_progress()
 		else:
 			CloudSaveManager.check_authentication()
+	if screen_name == "home":
+		call_deferred("_present_pending_power_up_choice")
+	elif screen_name != "game_over" and power_up_unlock_overlay.visible:
+		power_up_unlock_overlay.hide()
 
 
 func _on_menu_screen_changed(_screen_name: String) -> void:
@@ -91,13 +102,19 @@ func _refresh_menu_screens(menu_is_visible: bool) -> void:
 	home_screen.visible = menu_is_visible and selected == "home"
 	shop_screen.visible = menu_is_visible and selected == "shop"
 	profile_screen.visible = menu_is_visible and selected == "profile"
+	settings_screen.visible = menu_is_visible and selected == "settings"
 
 
 func _on_game_over_requested(final_score: int, best_score: int) -> void:
-	## Passes score text into the Game Over screen.
-	## During this UI milestone these values are placeholders supplied by callers.
+	## Passes score text into Game Over, then presents any already-saved choice.
 	game_over_screen.set_scores(final_score, best_score)
 	power_up_unlock_overlay.show_if_pending()
+
+
+func _present_pending_power_up_choice() -> void:
+	## Restored choices wait until a safe menu or Game Over screen is visible.
+	if GameManager.get_current_screen_name() in ["home", "game_over"]:
+		power_up_unlock_overlay.show_if_pending()
 
 
 func _refresh_launch_gate() -> void:

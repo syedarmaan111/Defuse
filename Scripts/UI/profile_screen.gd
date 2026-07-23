@@ -72,5 +72,4 @@ func _refresh_skin() -> void:
 
 
 func _on_settings_pressed() -> void:
-	## The entry is present now; the controls themselves belong to Milestone 13.
-	settings_status.text = "Audio and preferences arrive with the Settings milestone."
+	UIManager.show_settings()

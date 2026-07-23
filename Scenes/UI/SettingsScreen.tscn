@@ -1,0 +1,190 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/settings_screen.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/SecondaryButton.tscn" id="2_secondary"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_card"]
+bg_color = Color(0.925, 0.9, 0.855, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 7
+border_color = Color(0.29, 0.3, 0.29, 0.28)
+corner_radius_top_left = 30
+corner_radius_top_right = 30
+corner_radius_bottom_right = 30
+corner_radius_bottom_left = 30
+shadow_color = Color(0.08, 0.08, 0.07, 0.16)
+shadow_size = 10
+shadow_offset = Vector2(0, 7)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_slider"]
+bg_color = Color(0.49, 0.47, 0.43, 0.3)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+
+[node name="SettingsScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.968627, 0.952941, 0.92549, 1)
+
+[node name="SafeMargins" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 40
+
+[node name="Content" type="VBoxContainer" parent="SafeMargins"]
+layout_mode = 2
+theme_override_constants/separation = 28
+
+[node name="Header" type="HBoxContainer" parent="SafeMargins/Content"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="BackButton" parent="SafeMargins/Content/Header" instance=ExtResource("2_secondary")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 82)
+layout_mode = 2
+text = "<  BACK"
+
+[node name="TitleBlock" type="VBoxContainer" parent="SafeMargins/Content/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="Eyebrow" type="Label" parent="SafeMargins/Content/Header/TitleBlock"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.51, 0.45, 1)
+theme_override_font_sizes/font_size = 22
+text = "PREFERENCES"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="SafeMargins/Content/Header/TitleBlock"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.13, 0.16, 0.17, 1)
+theme_override_font_sizes/font_size = 58
+text = "SETTINGS"
+horizontal_alignment = 1
+
+[node name="AudioCard" type="PanelContainer" parent="SafeMargins/Content"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_card")
+
+[node name="CardMargins" type="MarginContainer" parent="SafeMargins/Content/AudioCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 30
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 34
+
+[node name="AudioContent" type="VBoxContainer" parent="SafeMargins/Content/AudioCard/CardMargins"]
+layout_mode = 2
+theme_override_constants/separation = 26
+
+[node name="SectionTitle" type="Label" parent="SafeMargins/Content/AudioCard/CardMargins/AudioContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.13, 0.16, 0.17, 1)
+theme_override_font_sizes/font_size = 36
+text = "AUDIO"
+
+[node name="SectionDescription" type="Label" parent="SafeMargins/Content/AudioCard/CardMargins/AudioContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.43, 0.42, 0.39, 1)
+theme_override_font_sizes/font_size = 21
+text = "Control the supplied bomb sound effects."
+autowrap_mode = 2
+
+[node name="SoundRow" type="HBoxContainer" parent="SafeMargins/Content/AudioCard/CardMargins/AudioContent"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="SoundLabels" type="VBoxContainer" parent="SafeMargins/Content/AudioCard/CardMargins/AudioContent/SoundRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Title" type="Label" parent="SafeMargins/Content/AudioCard/CardMargins/AudioContent/SoundRow/SoundLabels"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.16, 0.19, 0.2, 1)
+theme_override_font_sizes/font_size = 27
+text = "SOUND EFFECTS"
+
+[node name="Caption" type="Label" parent="SafeMargins/Content/AudioCard/CardMargins/AudioContent/SoundRow/SoundLabels"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.47, 0.42, 1)
+theme_override_font_sizes/font_size = 19
+text = "Fuse, defuse, and explosion audio"
+
+[node name="SoundToggle" type="CheckButton" parent="SafeMargins/Content/AudioCard/CardMargins/AudioContent/SoundRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 72)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.16, 0.19, 0.2, 1)
+theme_override_font_sizes/font_size = 24
+button_pressed = true
+text = "ON"
+
+[node name="VolumeHeader" type="HBoxContainer" parent="SafeMargins/Content/AudioCard/CardMargins/AudioContent"]
+layout_mode = 2
+
+[node name="VolumeTitle" type="Label" parent="SafeMargins/Content/AudioCard/CardMargins/AudioContent/VolumeHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.16, 0.19, 0.2, 1)
+theme_override_font_sizes/font_size = 27
+text = "SOUND VOLUME"
+
+[node name="VolumeValue" type="Label" parent="SafeMargins/Content/AudioCard/CardMargins/AudioContent/VolumeHeader"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.87, 0.35, 0.23, 1)
+theme_override_font_sizes/font_size = 27
+text = "85%"
+horizontal_alignment = 2
+
+[node name="VolumeSlider" type="HSlider" parent="SafeMargins/Content/AudioCard/CardMargins/AudioContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_override_styles/slider = SubResource("StyleBox_slider")
+min_value = 0.0
+max_value = 100.0
+step = 5.0
+value = 85.0
+
+[node name="PreviewButton" parent="SafeMargins/Content/AudioCard/CardMargins/AudioContent" instance=ExtResource("2_secondary")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 82)
+layout_mode = 2
+text = "TEST DEFUSE SOUND"
+
+[node name="PersistenceNote" type="Label" parent="SafeMargins/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.43, 0.42, 0.39, 1)
+theme_override_font_sizes/font_size = 20
+text = "Preferences save automatically and follow your cloud save."
+horizontal_alignment = 1
+autowrap_mode = 2

@@ -11,12 +11,15 @@ const BOMB_CELL_SCENE := preload("res://Scenes/Gameplay/BombCell.tscn")
 @onready var safe_margins: MarginContainer = $SafeMargins
 @onready var board_area: CenterContainer = %BoardArea
 @onready var bomb_grid: GridContainer = %BombGrid
+@onready var super_defuse_glow: Panel = %SuperDefuseGlow
 @onready var slow_motion_tint: ColorRect = %SlowMotionTint
 @onready var scan_shade: ColorRect = %ScanShade
 @onready var slow_motion_status: PanelContainer = %SlowMotionStatus
 @onready var slow_motion_label: Label = %SlowMotionLabel
 @onready var chain_defuse_status: PanelContainer = %ChainDefuseStatus
 @onready var chain_defuse_label: Label = %ChainDefuseLabel
+@onready var revive_grace_status: PanelContainer = %ReviveGraceStatus
+@onready var revive_grace_label: Label = %ReviveGraceLabel
 
 var _current_grid_side := 2
 var _bomb_cells: Array[BombCell] = []
@@ -25,8 +28,11 @@ var _scan_is_active := false
 var _scan_target := -1
 var _slow_motion_is_active := false
 var _chain_defuse_is_active := false
+var _revive_grace_is_active := false
 var _scan_tween: Tween
 var _slow_tint_tween: Tween
+var _super_defuse_glow_tween: Tween
+var _status_tweens: Dictionary = {}
 
 
 func _ready() -> void:
@@ -42,11 +48,15 @@ func _ready() -> void:
 	GameManager.bomb_protected.connect(_on_bomb_protected)
 	GameManager.reward_spawned.connect(_on_reward_spawned)
 	GameManager.reward_removed.connect(_on_reward_removed)
+	GameManager.revive_grace_changed.connect(_on_revive_grace_changed)
 	PowerUpManager.scan_target_changed.connect(_on_scan_target_changed)
 	PowerUpManager.timed_effect_changed.connect(_on_timed_effect_changed)
 	PowerUpManager.power_up_activated.connect(_on_power_up_activated)
 	EconomyManager.currency_changed.connect(_on_currency_changed)
 	_apply_run_snapshot(GameManager.get_run_snapshot())
+	_sync_slow_motion_visuals()
+	_sync_super_defuse_visuals()
+	_sync_revive_grace_visuals()
 	_refresh_gems()
 	set_process(true)
 
@@ -60,9 +70,14 @@ func _process(_delta: float) -> void:
 			phase, remaining, multiplier
 		]
 	if _chain_defuse_is_active:
-		chain_defuse_label.text = "CHAIN DEFUSE  •  %.1fs" % PowerUpManager.get_timed_effect_remaining(
+		chain_defuse_label.text = "SUPER DEFUSE  •  %.1fs" % PowerUpManager.get_timed_effect_remaining(
 			"chain_defuse"
 		)
+	if _revive_grace_is_active:
+		revive_grace_label.text = "REVIVE GRACE  •  %.1fs  •  TIMERS ×%.2f" % [
+			GameManager.get_revive_grace_remaining(),
+			GameManager.get_revive_grace_timer_multiplier(),
+		]
 
 
 func _apply_run_snapshot(snapshot: Dictionary) -> void:
@@ -164,6 +179,13 @@ func _on_reward_removed(bomb_index: int, _reason: String) -> void:
 		cell.clear_reward()
 
 
+func _on_revive_grace_changed(
+	is_active: bool, _timer_multiplier: float, _remaining_seconds: float
+) -> void:
+	_revive_grace_is_active = is_active
+	_set_status_visible(revive_grace_status, is_active)
+
+
 func _on_scan_target_changed(bomb_index: int) -> void:
 	_scan_target = bomb_index
 	for cell in _bomb_cells:
@@ -179,8 +201,7 @@ func _on_timed_effect_changed(
 		"slow_motion":
 			_set_slow_motion_active(is_active)
 		"chain_defuse":
-			_chain_defuse_is_active = is_active
-			_set_status_visible(chain_defuse_status, is_active)
+			_set_super_defuse_active(is_active)
 
 
 func _on_power_up_activated(power_up_id: String, context: Dictionary) -> void:
@@ -229,20 +250,76 @@ func _set_slow_motion_active(is_active: bool) -> void:
 		cell.set_slow_motion(is_active)
 
 
+func _set_super_defuse_active(is_active: bool) -> void:
+	_chain_defuse_is_active = is_active
+	if _super_defuse_glow_tween != null and _super_defuse_glow_tween.is_valid():
+		_super_defuse_glow_tween.kill()
+	if is_active:
+		_refresh_super_defuse_glow_layout()
+		super_defuse_glow.visible = true
+		super_defuse_glow.modulate.a = 0.0
+		_super_defuse_glow_tween = create_tween().set_loops()
+		_super_defuse_glow_tween.tween_property(
+			super_defuse_glow, "modulate:a", 0.58, 0.24
+		)
+		_super_defuse_glow_tween.tween_property(
+			super_defuse_glow, "modulate:a", 0.32, 0.62
+		).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		_super_defuse_glow_tween.tween_property(
+			super_defuse_glow, "modulate:a", 0.58, 0.62
+		).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	else:
+		_super_defuse_glow_tween = create_tween()
+		_super_defuse_glow_tween.tween_property(
+			super_defuse_glow, "modulate:a", 0.0, 0.2
+		)
+		_super_defuse_glow_tween.tween_callback(
+			func() -> void: super_defuse_glow.visible = false
+		)
+	_set_status_visible(chain_defuse_status, is_active)
+
+
 func _set_status_visible(status: Control, is_visible: bool) -> void:
+	var running_tween := _status_tweens.get(status) as Tween
+	if running_tween != null and running_tween.is_valid():
+		running_tween.kill()
 	if is_visible:
 		status.visible = true
 		status.modulate.a = 0.0
 		status.scale = Vector2(0.92, 0.92)
 		var show_tween := create_tween().set_parallel(true)
+		_status_tweens[status] = show_tween
 		show_tween.tween_property(status, "modulate:a", 1.0, 0.22)
 		show_tween.tween_property(status, "scale", Vector2.ONE, 0.22).set_trans(
 			Tween.TRANS_BACK
 		).set_ease(Tween.EASE_OUT)
 	else:
 		var hide_tween := create_tween()
+		_status_tweens[status] = hide_tween
 		hide_tween.tween_property(status, "modulate:a", 0.0, 0.2)
-		hide_tween.tween_callback(func() -> void: status.visible = false)
+		hide_tween.tween_callback(
+			func() -> void:
+				status.visible = false
+				_status_tweens.erase(status)
+		)
+
+
+func _sync_slow_motion_visuals() -> void:
+	## A gameplay view can be recreated after an activation signal was emitted.
+	## Restore slow motion so its overlay and countdown never depend on catching
+	## that one signal at exactly the right frame.
+	_set_slow_motion_active(
+		PowerUpManager.get_timed_effect_remaining("slow_motion") > 0.0
+	)
+
+
+func _sync_super_defuse_visuals() -> void:
+	_set_super_defuse_active(PowerUpManager.is_super_defuse_active())
+
+
+func _sync_revive_grace_visuals() -> void:
+	_revive_grace_is_active = GameManager.get_revive_grace_remaining() > 0.0
+	_set_status_visible(revive_grace_status, _revive_grace_is_active)
 
 
 func _rebuild_grid(cell_count: int) -> void:
@@ -300,12 +377,22 @@ func _refresh_grid_layout() -> void:
 	bomb_grid.add_theme_constant_override("v_separation", separation)
 	for cell in _bomb_cells:
 		cell.custom_minimum_size = Vector2.ONE * maxf(cell_size, 72.0)
+	call_deferred("_refresh_super_defuse_glow_layout")
 
 	# The dense 4x4 stage uses more of the screen width. The outer 20px margin
 	# still keeps content clear of the edge while making each touch target larger.
 	var horizontal_margin := 20 if _current_grid_side == 4 else 48
 	safe_margins.add_theme_constant_override("margin_left", horizontal_margin)
 	safe_margins.add_theme_constant_override("margin_right", horizontal_margin)
+
+
+func _refresh_super_defuse_glow_layout() -> void:
+	if not is_instance_valid(bomb_grid) or not is_instance_valid(super_defuse_glow):
+		return
+	var padding := 14.0
+	var grid_position := bomb_grid.global_position - global_position
+	super_defuse_glow.position = grid_position - Vector2.ONE * padding
+	super_defuse_glow.size = bomb_grid.size + Vector2.ONE * padding * 2.0
 
 
 func get_presented_score() -> int:

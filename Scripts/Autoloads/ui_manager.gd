@@ -9,6 +9,7 @@ enum MenuScreen {
 	HOME,
 	SHOP,
 	PROFILE,
+	SETTINGS,
 }
 
 var _current_menu_screen: MenuScreen = MenuScreen.HOME
@@ -24,6 +25,10 @@ func show_shop() -> void:
 
 func show_profile() -> void:
 	_set_menu_screen(MenuScreen.PROFILE)
+
+
+func show_settings() -> void:
+	_set_menu_screen(MenuScreen.SETTINGS)
 
 
 func get_current_menu_screen_name() -> String:

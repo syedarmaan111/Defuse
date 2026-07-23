@@ -1,7 +1,7 @@
 extends Node
 
 ## Headless coverage for timed rewards, safe collection, persistence, and all
-## six automatic power-up effects.
+## six immediate/armed power-up pickup effects.
 
 const GAMEPLAY_SCENE := preload("res://Scenes/Gameplay/Gameplay.tscn")
 const PROFILE_SCENE := preload("res://Scenes/UI/ProfileScreen.tscn")
@@ -29,16 +29,19 @@ func _ready() -> void:
 	add_child(gameplay)
 	await get_tree().process_frame
 	GameManager.start_game()
+	assert(GameManager.get_run_state_name() == "running")
 	_test_reward_schedule_and_gem_collection(gameplay)
 	await _test_lifetime_progression_and_unlocks()
 	_unlock_remaining_power_up_catalog()
 	GameManager.start_game()
+	assert(GameManager.get_run_state_name() == "running")
 	await get_tree().process_frame
 	_test_power_up_collection(gameplay)
 	_test_shield_and_extra_life()
 	_score_to(10)
-	_test_scan_and_slow_motion(gameplay)
-	_test_combo_and_chain_defuse()
+	_test_instant_power_up_pickups(gameplay)
+	await _test_scan_and_slow_motion(gameplay)
+	_test_combo_and_chain_defuse(gameplay)
 	_test_checkpoint_requirement()
 	print("Milestone 10 smoke test passed.")
 	get_tree().quit()
@@ -61,6 +64,14 @@ func _test_reward_schedule_and_gem_collection(gameplay: Control) -> void:
 	GameManager._reward_spawn_remaining = 0.0
 	GameManager._process_reward(0.0)
 	assert(GameManager.get_reward_snapshot()["reward_type"] == "gem")
+	assert(is_equal_approx(
+		float(GameManager.get_reward_snapshot()["duration_seconds"]),
+		GameManager.REWARD_LIFETIME_SECONDS
+	))
+	assert(is_equal_approx(
+		float(GameManager.get_reward_snapshot()["remaining_seconds"]),
+		GameManager.REWARD_LIFETIME_SECONDS
+	))
 	GameManager._remove_reward("test_reset")
 
 	var inactive_index := _find_inactive_index()
@@ -120,6 +131,18 @@ func _test_lifetime_progression_and_unlocks() -> void:
 	assert(overlay.show_if_pending())
 	assert(overlay.visible)
 	assert(overlay.items.get_child_count() == 6)
+	await get_tree().process_frame
+	assert(overlay.scroll.scroll_deadzone >= 18)
+	assert(
+		overlay.scroll.get_v_scroll_bar().max_value
+		> overlay.scroll.get_v_scroll_bar().page
+	)
+	var first_card: PowerUpUnlockCard = overlay.items.get_child(0)
+	assert(first_card.mouse_filter == Control.MOUSE_FILTER_PASS)
+	assert(first_card.get_node("Margin").mouse_filter == Control.MOUSE_FILTER_IGNORE)
+	overlay.scroll.scroll_vertical = 200
+	assert(overlay.scroll.scroll_vertical > 0)
+	overlay.scroll.scroll_vertical = 0
 	for choice_index in 3:
 		var card: PowerUpUnlockCard = overlay.items.get_child(0)
 		var selected_id := card.power_up_id
@@ -155,6 +178,7 @@ func _test_power_up_collection(gameplay: Control) -> void:
 	assert(badge.power_icon.texture == PowerUpManager.get_definition("shield").icon)
 	assert(GameManager.handle_bomb_tapped(inactive_index))
 	assert(PowerUpManager.get_quantity("shield") == 1)
+	assert(_activations.has("shield"))
 	assert(GameManager.current_lives == 3)
 	assert(not gameplay.get_node("%BombGrid").get_child(inactive_index).reward_badge.visible)
 
@@ -182,6 +206,52 @@ func _test_power_up_collection(gameplay: Control) -> void:
 	assert(PowerUpManager.get_quantity("extra_life") == 0)
 
 
+func _test_instant_power_up_pickups(gameplay: Control) -> void:
+	var inactive_index := _find_inactive_index()
+	var active_index: int = GameManager.get_active_bomb_indices()[0]
+
+	assert(GameManager._place_reward(
+		inactive_index, "power_up", "scan", "Scan", 6.0
+	))
+	assert(GameManager.handle_bomb_tapped(inactive_index))
+	assert(PowerUpManager.get_quantity("scan") == 0)
+	assert(PowerUpManager.get_timed_effect_remaining("scan") > 0.0)
+	assert(gameplay.get_node("%ScanShade").visible)
+	assert(gameplay.get_node("%BombGrid").get_child(active_index).scan_glow.visible)
+	PowerUpManager._stop_active_effect("scan")
+
+	assert(GameManager._place_reward(
+		inactive_index, "power_up", "slow_motion", "Slow Motion", 6.0
+	))
+	assert(GameManager.handle_bomb_tapped(inactive_index))
+	assert(PowerUpManager.get_quantity("slow_motion") == 0)
+	assert(PowerUpManager.get_timed_effect_remaining("slow_motion") > 0.0)
+	assert(gameplay.get_node("%SlowMotionStatus").visible)
+	assert(gameplay.get_node("%SlowMotionTint").visible)
+	PowerUpManager._stop_active_effect("slow_motion")
+
+	active_index = GameManager.get_active_bomb_indices()[0]
+	var score_before_combo := GameManager.current_score
+	assert(GameManager._place_reward(
+		active_index, "power_up", "combo_boost", "Combo Boost", 6.0
+	))
+	assert(GameManager.handle_bomb_tapped(active_index))
+	assert(PowerUpManager.get_quantity("combo_boost") == 0)
+	assert(PowerUpManager.get_score_multiplier() == 2)
+	assert(GameManager.current_score == score_before_combo + 2)
+	PowerUpManager._stop_active_effect("combo_boost")
+
+	assert(GameManager._place_reward(
+		inactive_index, "power_up", "chain_defuse", "Super Defuse", 6.0
+	))
+	assert(GameManager.handle_bomb_tapped(inactive_index))
+	assert(PowerUpManager.get_quantity("chain_defuse") == 0)
+	assert(PowerUpManager.get_timed_effect_remaining("chain_defuse") > 0.0)
+	assert(gameplay.get_node("%ChainDefuseStatus").visible)
+	assert(gameplay.get_node("%SuperDefuseGlow").visible)
+	PowerUpManager._stop_active_effect("chain_defuse")
+
+
 func _test_shield_and_extra_life() -> void:
 	var inactive_index := _find_inactive_index()
 	assert(GameManager.handle_bomb_tapped(inactive_index))
@@ -199,7 +269,11 @@ func _test_shield_and_extra_life() -> void:
 
 
 func _test_scan_and_slow_motion(gameplay: Control) -> void:
-	assert(GameManager.get_active_bomb_indices().size() == 2)
+	assert(
+		GameManager.get_active_bomb_indices().size() == 2,
+		"Expected two active bombs before pressure tests; got %s"
+		% [GameManager.get_active_bomb_indices()]
+	)
 	var active := GameManager.get_active_bomb_indices()
 	assert(PowerUpManager.add_quantity("scan", 1))
 	GameManager._bomb_time_remaining[active[0]] = 0.9
@@ -215,7 +289,15 @@ func _test_scan_and_slow_motion(gameplay: Control) -> void:
 		var active_cell: BombCell = gameplay.get_node("%BombGrid").get_child(bomb_index)
 		assert(active_cell.scan_glow.visible)
 		assert(active_cell.z_index == 11)
-	var inactive_index := _find_inactive_index()
+		assert(active_cell.bomb_image.self_modulate.g > active_cell.bomb_image.self_modulate.b)
+	# Visual state can be checked on a recently resolved inactive cell too; the
+	# gameplay helper intentionally skips those cells while their tap guard runs.
+	var inactive_index := -1
+	for bomb_index in gameplay.get_node("%BombGrid").get_child_count():
+		if not active.has(bomb_index):
+			inactive_index = bomb_index
+			break
+	assert(inactive_index >= 0)
 	assert(not gameplay.get_node("%BombGrid").get_child(inactive_index).scan_glow.visible)
 
 	assert(PowerUpManager.add_quantity("slow_motion", 1))
@@ -229,6 +311,21 @@ func _test_scan_and_slow_motion(gameplay: Control) -> void:
 	assert(is_equal_approx(PowerUpManager.get_timed_effect_remaining("slow_motion"), 8.0))
 	assert(gameplay.get_node("%SlowMotionStatus").visible)
 	assert(gameplay.get_node("%SlowMotionTint").visible)
+	# A replacement gameplay view must restore an already-running effect even
+	# though it never received the original activation signal.
+	var replacement_gameplay := GAMEPLAY_SCENE.instantiate()
+	add_child(replacement_gameplay)
+	await get_tree().process_frame
+	assert(replacement_gameplay.get_node("%SlowMotionStatus").visible)
+	assert(replacement_gameplay.get_node("%SlowMotionTint").visible)
+	replacement_gameplay.queue_free()
+
+	# If an old hide animation overlaps a fresh activation, the new countdown
+	# must win instead of being hidden by the stale completion callback.
+	gameplay._set_slow_motion_active(false)
+	gameplay._set_slow_motion_active(true)
+	await get_tree().create_timer(0.25).timeout
+	assert(gameplay.get_node("%SlowMotionStatus").visible)
 	GameManager._bomb_time_remaining[active[0]] = 1.0
 	GameManager._process(0.1)
 	assert(is_equal_approx(GameManager.get_bomb_time_remaining(active[0]), 0.965))
@@ -243,7 +340,7 @@ func _test_scan_and_slow_motion(gameplay: Control) -> void:
 	assert(is_equal_approx(PowerUpManager.get_timer_speed_multiplier(), 1.0))
 
 
-func _test_combo_and_chain_defuse() -> void:
+func _test_combo_and_chain_defuse(gameplay: Control) -> void:
 	assert(PowerUpManager.add_quantity("combo_boost", 1))
 	for _index in 4:
 		PowerUpManager.register_successful_defusal()
@@ -257,13 +354,27 @@ func _test_combo_and_chain_defuse() -> void:
 	var lifetime_before := SaveManager.get_lifetime_defusals()
 	var active_index: int = GameManager.get_active_bomb_indices()[0]
 	assert(GameManager.handle_bomb_tapped(active_index))
-	assert(PowerUpManager.get_quantity("chain_defuse") == 0)
+	assert(
+		PowerUpManager.get_quantity("chain_defuse") == 0,
+		"Super Defuse pickup charge was not consumed; quantity is %d"
+		% PowerUpManager.get_quantity("chain_defuse")
+	)
 	assert(_activations.has("chain_defuse"))
 	assert(GameManager.current_score == score_before + 4)
 	assert(GameManager.current_defusals == defusals_before + 2)
 	assert(SaveManager.get_lifetime_defusals() == lifetime_before + 2)
 	assert(is_equal_approx(PowerUpManager.get_timed_effect_remaining("chain_defuse"), 6.0))
 	assert(GameManager.get_active_bomb_indices().size() == 2)
+	assert(gameplay.get_node("%SuperDefuseGlow").visible)
+
+	GameManager._update_resolution_cooldowns(
+		GameManager.RESOLUTION_GUARD_SECONDS + 0.01
+	)
+	var inactive_index := _find_inactive_index()
+	var lives_before_safe_tap := GameManager.current_lives
+	assert(GameManager.handle_bomb_tapped(inactive_index))
+	assert(GameManager.current_lives == lives_before_safe_tap)
+	assert(_protected_indices.has(inactive_index))
 
 	# A second manual defusal within the window chains again without consuming a
 	# second item. This is the behavior that distinguishes it from the old one-shot.
@@ -281,6 +392,7 @@ func _test_checkpoint_requirement() -> void:
 	var definition := PowerUpManager.get_definition("shield")
 	var option: AcquisitionOption = definition.acquisition_options[0]
 	assert(option.lifetime_score_required == 20)
+	assert(PowerUpManager.get_definition("chain_defuse").display_name == "Super Defuse")
 
 
 func _score_to(target_score: int) -> void:

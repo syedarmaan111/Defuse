@@ -22,7 +22,7 @@
   - Combo Boost doubles score for eight gameplay seconds after a four-defusal
     rapid chain.
   - Chain Defuse resolves the most urgent additional active bomb.
-- Power-up choices now occur every 1,500 lifetime defusals instead of 500.
+- Power-up choices occur every 1,000 lifetime defusals.
 
 ## Scope Boundary
 
@@ -43,7 +43,7 @@ remain Gems only. Payments remain postponed indefinitely.
   - Shield and Extra Life consumption;
   - Scan targeting and Slow Motion timer scaling;
   - Combo Boost scoring and Chain Defuse resolution; and
-  - 1,500-defusal acquisition metadata.
+  - 1,000-defusal acquisition metadata.
 - The configured main scene starts headlessly without runtime errors.
 - `git diff --check` passes.
 
@@ -57,7 +57,7 @@ remain Gems only. Payments remain postponed indefinitely.
   reusable pulsing reward presentation.
 - `Scenes/Gameplay/BombCell.tscn`, `Scripts/Gameplay/bomb_cell.gd`, and
   `Scripts/Gameplay/gameplay.gd`: reward, scan, and protection feedback.
-- Power-up Resources: effect durations/strengths and 1,500 checkpoint metadata.
-- Shop scripts/tests and roadmap documents: 1,500-defusal presentation.
+- Power-up Resources: effect durations/strengths and 1,000 checkpoint metadata.
+- Shop scripts/tests and roadmap documents: 1,000-defusal presentation.
 - `Tests/Milestone10Smoke.tscn` and `Tests/milestone_10_smoke.gd`: Milestone 10
   coverage.

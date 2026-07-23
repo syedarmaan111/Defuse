@@ -199,7 +199,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.43, 0.42, 0.39, 1)
 theme_override_font_sizes/font_size = 19
-text = "Settings entry ready"
+text = "Sound and audio preferences"
 horizontal_alignment = 1
 autowrap_mode = 2
 

@@ -181,6 +181,10 @@ func get_timed_effect_remaining(power_up_id: String) -> float:
 	return 0.0
 
 
+func is_super_defuse_active() -> bool:
+	return _chain_defuse_remaining > 0.0
+
+
 func get_score_multiplier() -> int:
 	if _combo_boost_remaining <= 0.0:
 		return 1
@@ -198,6 +202,44 @@ func register_successful_defusal() -> void:
 		_activate_timed_effect("combo_boost")
 
 
+func activate_collected_power_up(power_up_id: String, context: Dictionary = {}) -> bool:
+	## Reward pickups should feel immediate. Timed effects begin on the pickup
+	## tap, while reactive effects announce that they are armed for their trigger.
+	match power_up_id:
+		"shield":
+			if get_quantity("shield") <= 0:
+				return false
+			_emit_activation("shield", {"armed": true})
+			return true
+		"extra_life":
+			var current_lives := int(context.get("current_lives", 0))
+			var maximum_lives := int(context.get("maximum_lives", 0))
+			if current_lives < maximum_lives:
+				return try_restore_life(current_lives, maximum_lives)
+			if not consume("extra_life"):
+				return false
+			_emit_activation(
+				"extra_life",
+				{"restored_to": current_lives, "did_restore": false}
+			)
+			return true
+		"scan":
+			if not _activate_timed_effect("scan"):
+				return false
+			_scan_target = int(context.get("scan_target", -1))
+			scan_target_changed.emit(_scan_target)
+			return true
+		"slow_motion", "combo_boost":
+			return _activate_timed_effect(power_up_id)
+		"chain_defuse":
+			var active_bomb_count := int(context.get("active_bomb_count", 0))
+			if active_bomb_count <= 0 or not consume("chain_defuse"):
+				return false
+			_start_chain_defuse(active_bomb_count)
+			return true
+	return false
+
+
 func try_activate_chain_defuse(active_bomb_count: int) -> bool:
 	if active_bomb_count <= 0:
 		return false
@@ -205,6 +247,11 @@ func try_activate_chain_defuse(active_bomb_count: int) -> bool:
 		return true
 	if not consume("chain_defuse"):
 		return false
+	_start_chain_defuse(active_bomb_count)
+	return true
+
+
+func _start_chain_defuse(active_bomb_count: int) -> void:
 	_chain_defuse_remaining = CHAIN_DEFUSE_DURATION
 	_emit_activation(
 		"chain_defuse",
@@ -214,7 +261,6 @@ func try_activate_chain_defuse(active_bomb_count: int) -> bool:
 		}
 	)
 	timed_effect_changed.emit("chain_defuse", true, CHAIN_DEFUSE_DURATION)
-	return true
 
 
 func try_block_explosion(bomb_index: int, reason: String) -> bool:

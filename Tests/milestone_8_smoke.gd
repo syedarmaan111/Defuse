@@ -29,6 +29,7 @@ func _seed_progression() -> void:
 
 func _test_run_start(gameplay: Control) -> void:
 	GameManager.start_game()
+	GameManager._finish_countdown()
 	assert(GameManager.get_current_screen_name() == "gameplay")
 	assert(GameManager.get_run_state_name() == "running")
 	assert(GameManager.current_score == 0)
@@ -116,6 +117,8 @@ func _test_pause_and_lives(gameplay: Control) -> void:
 	assert(not GameManager.handle_bomb_tapped(GameManager.get_active_bomb_indices()[0]))
 	assert(GameManager.current_score == score_before_tap)
 	GameManager.resume_game()
+	assert(GameManager.get_run_state_name() == "countdown")
+	GameManager._finish_countdown()
 	assert(GameManager.get_run_state_name() == "running")
 
 	assert(GameManager.lose_life())

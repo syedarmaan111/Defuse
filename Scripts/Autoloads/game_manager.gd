@@ -27,6 +27,16 @@ signal reward_spawned(
 )
 signal reward_removed(bomb_index: int, reason: String)
 signal reward_claimed(bomb_index: int, reward_type: String, reward_id: String)
+signal countdown_started(reason: String)
+signal countdown_tick(value: int, reason: String)
+signal countdown_finished(reason: String)
+signal rewarded_revive_requested()
+signal rewarded_revive_granted()
+signal rewarded_revive_failed(error_code: String)
+signal revive_availability_changed(is_available: bool)
+signal revive_grace_changed(
+	is_active: bool, timer_multiplier: float, remaining_seconds: float
+)
 
 enum ScreenName {
 	NETWORK_REQUIRED,
@@ -39,17 +49,21 @@ enum ScreenName {
 
 enum RunState {
 	IDLE,
+	COUNTDOWN,
 	RUNNING,
 	PAUSED,
 	GAME_OVER
 }
 
 const MAXIMUM_LIVES := 3
+const COUNTDOWN_START_VALUE := 3
+const COUNTDOWN_STEP_SECONDS := 0.8
+const REVIVE_GRACE_DURATION_SECONDS := 5.0
+const REVIVE_GRACE_START_MULTIPLIER := 0.75
 const RESOLUTION_GUARD_SECONDS := 0.45
 const REWARD_SPAWN_MIN_SECONDS := 7.0
 const REWARD_SPAWN_MAX_SECONDS := 11.0
-const REWARD_LIFETIME_MIN_SECONDS := 3.5
-const REWARD_LIFETIME_MAX_SECONDS := 4.5
+const REWARD_LIFETIME_SECONDS := 6.0
 const POWER_UP_REWARD_CHANCE := 0.75
 const GEM_REWARD_ONE_CHANCE := 0.65
 const GEM_REWARD_TWO_CHANCE := 0.25
@@ -77,19 +91,36 @@ var _resolution_cooldowns: Dictionary = {}
 var _reward_data: Dictionary = {}
 var _reward_spawn_remaining := 0.0
 var _random := RandomNumberGenerator.new()
+var _countdown_value := 0
+var _countdown_step_remaining := 0.0
+var _countdown_reason := ""
+var _revive_used := false
+var _rewarded_revive_request_in_flight := false
+var _revive_grace_remaining := 0.0
+var _run_completion_recorded := false
 
 
 func _ready() -> void:
 	_random.randomize()
+	AdManager.new_run_ready.connect(_start_game_after_ad)
+	AdManager.rewarded_completed.connect(_on_rewarded_ad_completed)
+	AdManager.rewarded_failed.connect(_on_rewarded_ad_failed)
 	set_process(true)
 
 
 func _process(delta: float) -> void:
+	if current_run_state == RunState.COUNTDOWN:
+		_advance_countdown(delta)
+		return
 	if current_run_state != RunState.RUNNING:
 		return
 	_update_resolution_cooldowns(delta)
 	_process_reward(delta)
-	var timer_delta := delta * PowerUpManager.get_timer_speed_multiplier()
+	var timer_delta := (
+		delta
+		* PowerUpManager.get_timer_speed_multiplier()
+		* get_revive_grace_timer_multiplier()
+	)
 	var expired_bombs: Array[int] = []
 	for bomb_index in _active_bomb_indices.duplicate():
 		if not _bomb_time_remaining.has(bomb_index):
@@ -110,6 +141,7 @@ func _process(delta: float) -> void:
 			break
 		if _active_bomb_indices.has(bomb_index):
 			_explode_active_bomb(bomb_index)
+	_advance_revive_grace(delta)
 
 
 func set_current_screen(next_screen: ScreenName) -> void:
@@ -163,6 +195,11 @@ func get_run_snapshot() -> Dictionary:
 		"grid_side": int(get_current_stage_config()["grid_side"]),
 		"active_bombs": int(get_current_stage_config()["active_bombs"]),
 		"active_bomb_indices": get_active_bomb_indices(),
+		"countdown_value": _countdown_value,
+		"countdown_reason": _countdown_reason,
+		"revive_used": _revive_used,
+		"revive_grace_remaining": _revive_grace_remaining,
+		"revive_grace_multiplier": get_revive_grace_timer_multiplier(),
 	}
 
 
@@ -178,28 +215,47 @@ func start_game() -> void:
 	if not CloudSaveManager.is_gate_satisfied() or not CloudSaveManager.is_restore_ready():
 		set_current_screen(ScreenName.SIGN_IN)
 		return
+	if AdManager.intercept_new_run_request():
+		return
+	_start_game_after_ad()
+
+
+func _start_game_after_ad() -> void:
+	## Rechecks every online gate because an asynchronous ad may have completed
+	## after the connection or sign-in state changed.
+	if not NetworkManager.can_start_game():
+		set_current_screen(ScreenName.NETWORK_REQUIRED)
+		return
+	if not CloudSaveManager.is_gate_satisfied() or not CloudSaveManager.is_restore_ready():
+		set_current_screen(ScreenName.SIGN_IN)
+		return
 
 	current_score = 0
 	current_defusals = 0
 	current_lives = MAXIMUM_LIVES
 	_stage_index = 0
 	_pending_stage_index = -1
+	_revive_used = false
+	_rewarded_revive_request_in_flight = false
+	_run_completion_recorded = false
+	_stop_countdown()
+	_stop_revive_grace()
 	_clear_bomb_runtime()
 	_reset_reward_runtime()
 	PowerUpManager.reset_run_effects()
-	_set_run_state(RunState.RUNNING)
-	AudioManager.set_gameplay_audio_paused(false)
 	set_current_screen(ScreenName.GAMEPLAY)
 	score_changed.emit(current_score)
 	lives_changed.emit(current_lives, MAXIMUM_LIVES)
 	stage_changed.emit(1, get_current_stage_config())
 	_build_initial_layout()
+	_set_run_state(RunState.RUNNING)
+	AudioManager.set_gameplay_audio_paused(false)
 	run_started.emit(get_run_snapshot())
 
 
 func pause_game() -> void:
-	## Freezes gameplay input. Timer pausing will subscribe to this state in M9.
-	if current_screen != ScreenName.GAMEPLAY:
+	## Freezes all gameplay clocks and input until Resume starts its countdown.
+	if current_screen != ScreenName.GAMEPLAY or current_run_state != RunState.RUNNING:
 		return
 	_set_run_state(RunState.PAUSED)
 	AudioManager.set_gameplay_audio_paused(true)
@@ -207,11 +263,108 @@ func pause_game() -> void:
 
 
 func resume_game() -> void:
-	if current_screen != ScreenName.PAUSE:
+	if current_screen != ScreenName.PAUSE or current_run_state != RunState.PAUSED:
 		return
-	_set_run_state(RunState.RUNNING)
-	AudioManager.set_gameplay_audio_paused(false)
 	set_current_screen(ScreenName.GAMEPLAY)
+	_begin_countdown("resume")
+
+
+func is_countdown_active() -> bool:
+	return current_run_state == RunState.COUNTDOWN
+
+
+func get_countdown_value() -> int:
+	return _countdown_value
+
+
+func get_countdown_reason() -> String:
+	return _countdown_reason
+
+
+func can_offer_rewarded_revive() -> bool:
+	## Availability requires a ready provider (or explicit debug simulation).
+	return (
+		current_run_state == RunState.GAME_OVER
+		and current_lives <= 0
+		and not _revive_used
+		and not _rewarded_revive_request_in_flight
+		and NetworkManager.can_start_game()
+		and AdManager.can_show_rewarded()
+	)
+
+
+func is_rewarded_revive_simulation_enabled() -> bool:
+	## Compatibility query retained for Milestone 12 tests and debug tooling.
+	return AdManager.is_simulation_enabled()
+
+
+func request_rewarded_revive() -> bool:
+	## A revive is granted only from AdManager's earned-reward callback.
+	if not can_offer_rewarded_revive():
+		return false
+	_rewarded_revive_request_in_flight = true
+	revive_availability_changed.emit(false)
+	rewarded_revive_requested.emit()
+	if not AdManager.request_rewarded("revive"):
+		reject_rewarded_revive("request_failed")
+		return false
+	return true
+
+
+func reject_rewarded_revive(error_code: String = "reward_not_granted") -> void:
+	## Future ad-provider failures return here so the player is never trapped in
+	## a loading state and can continue with normal Game Over actions.
+	if not _rewarded_revive_request_in_flight:
+		return
+	_rewarded_revive_request_in_flight = false
+	rewarded_revive_failed.emit(error_code)
+	revive_availability_changed.emit(can_offer_rewarded_revive())
+
+
+func grant_rewarded_revive() -> bool:
+	## Called only after a rewarded-ad completion callback (or the development
+	## simulation). It preserves score/stage and rebuilds a completely fresh wave.
+	if (
+		current_run_state != RunState.GAME_OVER
+		or current_lives > 0
+		or _revive_used
+	):
+		_rewarded_revive_request_in_flight = false
+		return false
+	_rewarded_revive_request_in_flight = false
+	_revive_used = true
+	current_lives = 1
+	_sync_stage_to_current_defusals()
+	_clear_bomb_runtime()
+	_reset_reward_runtime()
+	PowerUpManager.reset_run_effects()
+	lives_changed.emit(current_lives, MAXIMUM_LIVES)
+	stage_changed.emit(
+		int(get_current_stage_config()["stage"]), get_current_stage_config()
+	)
+	_build_initial_layout()
+	set_current_screen(ScreenName.GAMEPLAY)
+	_begin_countdown("revive")
+	rewarded_revive_granted.emit()
+	revive_availability_changed.emit(false)
+	return true
+
+
+func get_revive_grace_remaining() -> float:
+	return _revive_grace_remaining
+
+
+func get_revive_grace_timer_multiplier() -> float:
+	if _revive_grace_remaining <= 0.0:
+		return 1.0
+	var progress := 1.0 - (
+		_revive_grace_remaining / REVIVE_GRACE_DURATION_SECONDS
+	)
+	return lerpf(
+		REVIVE_GRACE_START_MULTIPLIER,
+		1.0,
+		clampf(progress, 0.0, 1.0)
+	)
 
 
 func handle_bomb_tapped(bomb_index: int) -> bool:
@@ -285,7 +438,9 @@ func _explode_active_bomb(bomb_index: int) -> void:
 
 func _explode_inactive_bomb(bomb_index: int) -> void:
 	_resolution_cooldowns[bomb_index] = RESOLUTION_GUARD_SECONDS
-	if PowerUpManager.try_block_explosion(bomb_index, "inactive_tap"):
+	if PowerUpManager.is_super_defuse_active():
+		bomb_protected.emit(bomb_index, "chain_defuse")
+	elif PowerUpManager.try_block_explosion(bomb_index, "inactive_tap"):
 		bomb_protected.emit(bomb_index, "shield")
 	else:
 		bomb_exploded.emit(bomb_index, "inactive_tap")
@@ -324,6 +479,8 @@ func finish_run() -> void:
 	if current_run_state not in [RunState.RUNNING, RunState.PAUSED]:
 		return
 	_set_run_state(RunState.GAME_OVER)
+	_stop_countdown()
+	_stop_revive_grace()
 	AudioManager.set_gameplay_audio_paused(false)
 	_clear_bomb_runtime()
 	_clear_reward_runtime("run_finished")
@@ -335,8 +492,10 @@ func finish_run() -> void:
 	if current_score > SaveManager.get_best_score():
 		SaveManager.set_best_score(current_score)
 	PowerUpManager.queue_lifetime_checkpoint_choices()
+	_record_run_completion_once()
 	set_current_screen(ScreenName.GAME_OVER)
 	game_over_requested.emit(current_score, SaveManager.get_best_score())
+	revive_availability_changed.emit(can_offer_rewarded_revive())
 
 
 func return_to_home() -> void:
@@ -354,6 +513,11 @@ func return_to_home() -> void:
 	current_lives = MAXIMUM_LIVES
 	_stage_index = 0
 	_pending_stage_index = -1
+	_revive_used = false
+	_rewarded_revive_request_in_flight = false
+	_run_completion_recorded = false
+	_stop_countdown()
+	_stop_revive_grace()
 	PowerUpManager.queue_lifetime_checkpoint_choices()
 	_set_run_state(RunState.IDLE)
 	show_home_if_ready()
@@ -378,8 +542,11 @@ func show_game_over(final_score: int = 0) -> void:
 	_set_run_state(RunState.GAME_OVER)
 	if current_score > SaveManager.get_best_score():
 		SaveManager.set_best_score(current_score)
+	PowerUpManager.queue_lifetime_checkpoint_choices()
+	_record_run_completion_once()
 	set_current_screen(ScreenName.GAME_OVER)
 	game_over_requested.emit(current_score, SaveManager.get_best_score())
+	revive_availability_changed.emit(can_offer_rewarded_revive())
 
 
 func _set_run_state(next_state: RunState) -> void:
@@ -387,6 +554,108 @@ func _set_run_state(next_state: RunState) -> void:
 		return
 	current_run_state = next_state
 	run_state_changed.emit(get_run_state_name())
+
+
+func _record_run_completion_once() -> void:
+	## A rewarded continuation belongs to the same run and must not increment the
+	## persisted cadence a second time when its restored life is later lost.
+	if _run_completion_recorded:
+		return
+	_run_completion_recorded = true
+	AdManager.register_completed_run()
+
+
+func _on_rewarded_ad_completed(placement_id: String) -> void:
+	if placement_id == "revive":
+		grant_rewarded_revive()
+
+
+func _on_rewarded_ad_failed(placement_id: String, error_code: String) -> void:
+	if placement_id == "revive":
+		reject_rewarded_revive(error_code)
+
+
+func _begin_countdown(reason: String) -> bool:
+	## One manager-owned countdown pauses every gameplay clock by using the run
+	## state already respected by bombs, rewards, effects, scoring, and input.
+	if current_run_state == RunState.COUNTDOWN:
+		return false
+	_countdown_reason = reason
+	_countdown_value = COUNTDOWN_START_VALUE
+	_countdown_step_remaining = COUNTDOWN_STEP_SECONDS
+	_set_run_state(RunState.COUNTDOWN)
+	AudioManager.set_gameplay_audio_paused(true)
+	countdown_started.emit(reason)
+	countdown_tick.emit(_countdown_value, reason)
+	return true
+
+
+func _advance_countdown(delta: float) -> void:
+	if current_run_state != RunState.COUNTDOWN:
+		return
+	_countdown_step_remaining -= maxf(delta, 0.0)
+	while _countdown_step_remaining <= 0.0 and current_run_state == RunState.COUNTDOWN:
+		_countdown_value -= 1
+		if _countdown_value <= 0:
+			_finish_countdown()
+			return
+		_countdown_step_remaining += COUNTDOWN_STEP_SECONDS
+		countdown_tick.emit(_countdown_value, _countdown_reason)
+
+
+func _finish_countdown() -> void:
+	var finished_reason := _countdown_reason
+	_countdown_value = 0
+	_countdown_step_remaining = 0.0
+	_countdown_reason = ""
+	if finished_reason == "revive":
+		_start_revive_grace()
+	_set_run_state(RunState.RUNNING)
+	AudioManager.set_gameplay_audio_paused(false)
+	countdown_finished.emit(finished_reason)
+
+
+func _stop_countdown() -> void:
+	_countdown_value = 0
+	_countdown_step_remaining = 0.0
+	_countdown_reason = ""
+
+
+func _start_revive_grace() -> void:
+	_revive_grace_remaining = REVIVE_GRACE_DURATION_SECONDS
+	revive_grace_changed.emit(
+		true,
+		get_revive_grace_timer_multiplier(),
+		_revive_grace_remaining
+	)
+
+
+func _advance_revive_grace(delta: float) -> void:
+	if _revive_grace_remaining <= 0.0:
+		return
+	_revive_grace_remaining = maxf(_revive_grace_remaining - delta, 0.0)
+	revive_grace_changed.emit(
+		_revive_grace_remaining > 0.0,
+		get_revive_grace_timer_multiplier(),
+		_revive_grace_remaining
+	)
+
+
+func _stop_revive_grace() -> void:
+	if _revive_grace_remaining > 0.0:
+		_revive_grace_remaining = 0.0
+		revive_grace_changed.emit(false, 1.0, 0.0)
+	else:
+		_revive_grace_remaining = 0.0
+
+
+func _sync_stage_to_current_defusals() -> void:
+	var target_stage_index := 0
+	for index in STAGE_DEFINITIONS.size():
+		if current_defusals >= int(STAGE_DEFINITIONS[index]["starts_at"]):
+			target_stage_index = index
+	_stage_index = target_stage_index
+	_pending_stage_index = -1
 
 
 func _queue_eligible_stage_change() -> void:
@@ -562,7 +831,7 @@ func _spawn_random_reward() -> void:
 		reward_type,
 		reward_id,
 		display_name,
-		_random.randf_range(REWARD_LIFETIME_MIN_SECONDS, REWARD_LIFETIME_MAX_SECONDS),
+		REWARD_LIFETIME_SECONDS,
 		reward_amount
 	)
 
@@ -581,7 +850,7 @@ func _place_reward(
 	reward_type: String,
 	reward_id: String,
 	display_name: String,
-	duration_seconds: float = 6.0,
+	duration_seconds: float = REWARD_LIFETIME_SECONDS,
 	reward_amount: int = 1
 ) -> bool:
 	var grid_side := int(get_current_stage_config()["grid_side"])
@@ -625,16 +894,24 @@ func _claim_reward() -> void:
 	if reward_type == "gem":
 		EconomyManager.earn_gems(reward_amount)
 	else:
-		if reward_id == "extra_life":
-			# Extra Life is an immediate pickup, not a stored charge. At full
-			# health it is simply collected without changing inventory.
-			if current_lives < MAXIMUM_LIVES:
-				PowerUpManager.add_quantity(reward_id, 1)
-				if PowerUpManager.try_restore_life(current_lives, MAXIMUM_LIVES):
-					current_lives += 1
-					lives_changed.emit(current_lives, MAXIMUM_LIVES)
-		else:
-			PowerUpManager.add_quantity(reward_id, 1)
+		var lives_before_activation := current_lives
+		if PowerUpManager.add_quantity(reward_id, reward_amount):
+			var did_activate := PowerUpManager.activate_collected_power_up(
+				reward_id,
+				{
+					"active_bomb_count": _active_bomb_indices.size(),
+					"scan_target": _get_most_urgent_active_bomb(),
+					"current_lives": current_lives,
+					"maximum_lives": MAXIMUM_LIVES,
+				}
+			)
+			if (
+				did_activate
+				and reward_id == "extra_life"
+				and lives_before_activation < MAXIMUM_LIVES
+			):
+				current_lives += 1
+				lives_changed.emit(current_lives, MAXIMUM_LIVES)
 	reward_claimed.emit(bomb_index, reward_type, reward_id)
 	_schedule_next_reward()
 

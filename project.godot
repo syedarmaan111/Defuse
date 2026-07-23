@@ -12,28 +12,32 @@ config_version=5
 
 config/name="Defuse"
 run/main_scene="res://Scenes/Main.tscn"
+config/quit_on_go_back=false
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
-config/quit_on_go_back=false
 
 [autoload]
 
 UIManager="*res://Scripts/Autoloads/ui_manager.gd"
 NetworkManager="*res://Scripts/Autoloads/network_manager.gd"
 SaveManager="*res://Scripts/Autoloads/save_manager.gd"
+SettingsManager="*res://Scripts/Autoloads/settings_manager.gd"
+AudioManager="*res://Scripts/Autoloads/audio_manager.gd"
 EconomyManager="*res://Scripts/Autoloads/economy_manager.gd"
 SkinManager="*res://Scripts/Autoloads/skin_manager.gd"
 PowerUpManager="*res://Scripts/Autoloads/power_up_manager.gd"
 CommerceManager="*res://Scripts/Autoloads/commerce_manager.gd"
 ShopManager="*res://Scripts/Autoloads/shop_manager.gd"
 CloudSaveManager="*res://Scripts/Autoloads/cloud_save_manager.gd"
+AdManager="*res://Scripts/Autoloads/ad_manager.gd"
 GameManager="*res://Scripts/Autoloads/game_manager.gd"
-AudioManager="*res://Scripts/Autoloads/audio_manager.gd"
 GodotPlayGameServices="*uid://okgap0vbtm6"
 
 [defuse]
 
 development/bypass_online_gate=false
+development/simulate_ads=true
+development/simulate_rewarded_ads=true
 online_gate/enabled=false
 play_games/require_sign_in=false
 

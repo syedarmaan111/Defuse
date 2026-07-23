@@ -1,0 +1,95 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/pre_play_countdown_overlay.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_ring"]
+bg_color = Color(0.968627, 0.94902, 0.913725, 0.98)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.32, 0.3, 0.25, 0.58)
+corner_radius_top_left = 112
+corner_radius_top_right = 112
+corner_radius_bottom_right = 112
+corner_radius_bottom_left = 112
+shadow_color = Color(0.03, 0.04, 0.04, 0.38)
+shadow_size = 22
+shadow_offset = Vector2(0, 12)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_reason"]
+bg_color = Color(0.12, 0.14, 0.15, 0.9)
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+corner_radius_bottom_right = 15
+corner_radius_bottom_left = 15
+
+[node name="PrePlayCountdownOverlay" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+script = ExtResource("1_script")
+
+[node name="Dim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.035, 0.04, 0.04, 0.5)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Stack" type="VBoxContainer" parent="Center"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="ReasonLabel" type="Label" parent="Center/Stack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(250, 56)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.98, 0.95, 0.89, 1)
+theme_override_font_sizes/font_size = 25
+theme_override_styles/normal = SubResource("StyleBox_reason")
+text = "GET READY"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Ring" type="PanelContainer" parent="Center/Stack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(224, 224)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+pivot_offset = Vector2(112, 112)
+theme_override_styles/panel = SubResource("StyleBox_ring")
+
+[node name="CountdownLabel" type="Label" parent="Center/Stack/Ring"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.145, 0.176, 0.188, 1)
+theme_override_colors/font_shadow_color = Color(0.1, 0.08, 0.06, 0.2)
+theme_override_constants/shadow_offset_y = 5
+theme_override_font_sizes/font_size = 118
+text = "3"
+horizontal_alignment = 1
+vertical_alignment = 1

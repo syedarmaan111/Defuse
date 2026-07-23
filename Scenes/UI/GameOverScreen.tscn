@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://defuse_game_over_screen"]
+[gd_scene load_steps=9 format=3 uid="uid://defuse_game_over_screen"]
 
 [ext_resource type="Script" path="res://Scripts/UI/game_over_screen.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/Components/PopupPanel.tscn" id="2_popup"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" path="res://Scenes/UI/Components/SecondaryButton.tscn" id="4_secondary"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/Components/DangerButton.tscn" id="5_danger"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/Components/BannerAdSlot.tscn" id="6_banner"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/RewardButton.tscn" id="7_reward"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_score"]
 bg_color = Color(0.92549, 0.878431, 0.807843, 1)
@@ -119,6 +120,11 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 text = "▶   PLAY AGAIN"
+
+[node name="ReviveButton" parent="CenterMargins/Center/Popup/Content" instance=ExtResource("7_reward")]
+unique_name_in_owner = true
+layout_mode = 2
+text = "WATCH AD TO REVIVE\nCONTINUE WITH 1 LIFE"
 
 [node name="QuitButton" parent="CenterMargins/Center/Popup/Content" instance=ExtResource("5_danger")]
 unique_name_in_owner = true

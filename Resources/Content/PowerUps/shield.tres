@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="PowerUpDefinition" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="PowerUpDefinition" format=3 uid="uid://bwr5xtw2du6yx"]
 
+[ext_resource type="Script" path="res://Scripts/Data/acquisition_option.gd" id="1_ih1jg"]
 [ext_resource type="Script" path="res://Scripts/Data/power_up_definition.gd" id="1_power"]
 [ext_resource type="Resource" path="res://Resources/Content/AcquisitionOptions/Lifetime500.tres" id="2_checkpoint"]
-[ext_resource type="Texture2D" path="res://Assets/UI/UI mockups/Power ups/Shield_power_up.png" id="3_icon_source"]
+[ext_resource type="Texture2D" uid="uid://dd3hex2lnftvk" path="res://Assets/UI/UI mockups/Power ups/Shield_power_up.png" id="3_icon_source"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_icon"]
 atlas = ExtResource("3_icon_source")
@@ -14,5 +15,4 @@ content_id = "shield"
 display_name = "Shield"
 description = "Automatically blocks one bomb explosion that would cost a life."
 icon = SubResource("AtlasTexture_icon")
-effect_type = 0
-acquisition_options = Array[Resource]([ExtResource("2_checkpoint")])
+acquisition_options = Array[ExtResource("1_ih1jg")]([ExtResource("2_checkpoint")])

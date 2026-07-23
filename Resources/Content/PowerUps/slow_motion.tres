@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="PowerUpDefinition" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="PowerUpDefinition" format=3 uid="uid://cd85m1yij4w5v"]
 
 [ext_resource type="Script" path="res://Scripts/Data/power_up_definition.gd" id="1_power"]
+[ext_resource type="Script" path="res://Scripts/Data/acquisition_option.gd" id="1_yve1e"]
 [ext_resource type="Resource" path="res://Resources/Content/AcquisitionOptions/Lifetime500.tres" id="2_checkpoint"]
-[ext_resource type="Texture2D" path="res://Assets/UI/UI mockups/Power ups/Slow Motion Power up.png" id="3_icon_source"]
+[ext_resource type="Texture2D" uid="uid://b1qpb1kvwh8xs" path="res://Assets/UI/UI mockups/Power ups/Slow Motion Power up.png" id="3_icon_source"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_icon"]
 atlas = ExtResource("3_icon_source")
@@ -17,4 +18,4 @@ icon = SubResource("AtlasTexture_icon")
 effect_type = 1
 duration_seconds = 8.0
 effect_strength = 0.35
-acquisition_options = Array[Resource]([ExtResource("2_checkpoint")])
+acquisition_options = Array[ExtResource("1_yve1e")]([ExtResource("2_checkpoint")])

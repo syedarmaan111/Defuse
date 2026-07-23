@@ -41,6 +41,7 @@ func _seed_progression() -> void:
 
 func _test_initial_timers_and_pause(gameplay: Control) -> void:
 	GameManager.start_game()
+	GameManager._finish_countdown()
 	var active_index: int = GameManager.get_active_bomb_indices()[0]
 	assert(is_equal_approx(GameManager.get_bomb_timer_duration(active_index), 2.6))
 	assert(GameManager.get_bomb_time_remaining(active_index) > 2.5)
@@ -59,6 +60,7 @@ func _test_initial_timers_and_pause(gameplay: Control) -> void:
 	GameManager._process(1.0)
 	assert(is_equal_approx(GameManager.get_bomb_time_remaining(active_index), paused_remaining))
 	GameManager.resume_game()
+	GameManager._finish_countdown()
 
 
 func _test_defusal_and_stage_presentation(gameplay: Control) -> void:

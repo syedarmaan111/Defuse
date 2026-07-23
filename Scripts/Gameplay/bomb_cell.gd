@@ -247,9 +247,9 @@ func _refresh_power_up_visuals() -> void:
 		_scan_pulse_tween = null
 		scan_glow.scale = Vector2.ONE
 	if _is_scanned and should_glow:
-		bomb_image.self_modulate = Color(0.58, 0.96, 1.18)
+		bomb_image.self_modulate = Color(0.72, 1.0, 0.58)
 	elif should_glow:
-		bomb_image.self_modulate = Color(0.84, 0.98, 1.08)
+		bomb_image.self_modulate = Color(0.84, 1.0, 0.76)
 	elif _slow_motion_active:
 		bomb_image.self_modulate = Color(0.76, 0.91, 1.0)
 	else:

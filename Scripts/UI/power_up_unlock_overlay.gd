@@ -5,6 +5,7 @@ const UNLOCK_CARD := preload("res://Scenes/UI/Components/PowerUpUnlockCard.tscn"
 
 @onready var popup: Control = %Popup
 @onready var choice_status: Label = %ChoiceStatus
+@onready var scroll: ScrollContainer = %Scroll
 @onready var items: VBoxContainer = %Items
 
 
@@ -20,6 +21,7 @@ func show_if_pending() -> bool:
 		hide()
 		return false
 	_refresh_choices()
+	scroll.scroll_vertical = 0
 	show()
 	_animate_popup()
 	return true
@@ -56,8 +58,6 @@ func _on_unlock_choices_changed(pending_count: int) -> void:
 		hide()
 	elif visible:
 		_refresh_choices()
-	else:
-		show_if_pending()
 
 
 func _animate_popup() -> void:
