@@ -4,8 +4,10 @@ extends Node
 
 
 func _ready() -> void:
-	# Base-game development currently launches offline through the feature flag.
-	assert(not NetworkManager.is_online_gate_enabled())
+	# Android ships with the online gate enabled. Desktop/headless development
+	# uses an explicit bypass that is ignored by Android exports.
+	assert(NetworkManager.is_online_gate_enabled())
+	assert(NetworkManager.is_development_bypass_active())
 	NetworkManager._set_connection_state(false, false)
 	assert(NetworkManager.can_start_game())
 	GameManager.show_home_if_ready()

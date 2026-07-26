@@ -14,7 +14,7 @@ config/name="Defuse"
 run/main_scene="res://Scenes/Main.tscn"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.6", "GL Compatibility")
-config/icon="res://icon.svg"
+config/icon="res://Game icon.png"
 
 [autoload]
 
@@ -35,10 +35,10 @@ GodotPlayGameServices="*uid://okgap0vbtm6"
 
 [defuse]
 
-development/bypass_online_gate=false
+development/bypass_online_gate=true
 development/simulate_ads=true
 development/simulate_rewarded_ads=true
-online_gate/enabled=false
+online_gate/enabled=true
 play_games/require_sign_in=false
 
 [display]

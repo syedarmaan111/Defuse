@@ -64,6 +64,7 @@ const RESOLUTION_GUARD_SECONDS := 0.45
 const REWARD_SPAWN_MIN_SECONDS := 7.0
 const REWARD_SPAWN_MAX_SECONDS := 11.0
 const REWARD_LIFETIME_SECONDS := 6.0
+const REWARD_ACTIVE_TARGET_MIN_REMAINING_SECONDS := 0.75
 const POWER_UP_REWARD_CHANCE := 0.75
 const GEM_REWARD_ONE_CHANCE := 0.65
 const GEM_REWARD_TWO_CHANCE := 0.25
@@ -115,7 +116,6 @@ func _process(delta: float) -> void:
 	if current_run_state != RunState.RUNNING:
 		return
 	_update_resolution_cooldowns(delta)
-	_process_reward(delta)
 	var timer_delta := (
 		delta
 		* PowerUpManager.get_timer_speed_multiplier()
@@ -141,6 +141,10 @@ func _process(delta: float) -> void:
 			break
 		if _active_bomb_indices.has(bomb_index):
 			_explode_active_bomb(bomb_index)
+	# Resolve timers, stage changes, and Game Over before spawning a reward. This
+	# prevents a badge from being shown and removed again in the same frame.
+	if current_run_state == RunState.RUNNING:
+		_process_reward(delta)
 	_advance_revive_grace(delta)
 
 
@@ -389,8 +393,8 @@ func handle_bomb_tapped(bomb_index: int) -> bool:
 
 
 func _defuse_active_bomb(bomb_index: int) -> void:
-	## Resolves only the tapped active bomb. Every other active bomb remains in
-	## place. At a stage threshold, replacements pause until the wave is empty.
+	## Resolves the tapped active bomb. While Super Defuse is active, the same
+	## action also resolves every other bomb that was armed at that moment.
 	_active_bomb_indices.erase(bomb_index)
 	_unarm_bomb(bomb_index)
 	_resolution_cooldowns[bomb_index] = RESOLUTION_GUARD_SECONDS
@@ -402,8 +406,8 @@ func _defuse_active_bomb(bomb_index: int) -> void:
 	score_changed.emit(current_score)
 	var resolved_indices: Array[int] = [bomb_index]
 	if PowerUpManager.try_activate_chain_defuse(_active_bomb_indices.size()):
-		var chained_index := _get_most_urgent_active_bomb()
-		if chained_index >= 0:
+		var chained_indices: Array[int] = _active_bomb_indices.duplicate()
+		for chained_index in chained_indices:
 			_active_bomb_indices.erase(chained_index)
 			_unarm_bomb(chained_index)
 			_resolution_cooldowns[chained_index] = RESOLUTION_GUARD_SECONDS
@@ -803,16 +807,34 @@ func _process_reward(delta: float) -> void:
 
 
 func _spawn_random_reward() -> void:
+	# A pending stage rebuild clears rewards. Wait for the new grid rather than
+	# flashing a reward on the outgoing grid for a single frame.
+	if _pending_stage_index >= 0:
+		return
 	if _active_bomb_indices.is_empty():
 		_schedule_next_reward()
 		return
 	var grid_side := int(get_current_stage_config()["grid_side"])
 	var inactive_indices: Array[int] = []
+	var stable_active_indices: Array[int] = []
 	for bomb_index in grid_side * grid_side:
-		if not _active_bomb_indices.has(bomb_index):
+		if _active_bomb_indices.has(bomb_index):
+			if (
+				get_bomb_time_remaining(bomb_index)
+				>= REWARD_ACTIVE_TARGET_MIN_REMAINING_SECONDS
+			):
+				stable_active_indices.append(bomb_index)
+		else:
 			inactive_indices.append(bomb_index)
-	var use_inactive := not inactive_indices.is_empty() and _random.randf() < 0.75
-	var target_pool := inactive_indices if use_inactive else _active_bomb_indices
+	var use_inactive := (
+		not inactive_indices.is_empty()
+		and (stable_active_indices.is_empty() or _random.randf() < 0.75)
+	)
+	var target_pool := inactive_indices if use_inactive else stable_active_indices
+	if target_pool.is_empty():
+		# Current stage definitions always have inactive cells, but fail safely if
+		# a future fully-active grid has no target with enough visible time left.
+		return
 	var target_index: int = target_pool[_random.randi_range(0, target_pool.size() - 1)]
 
 	var reward_type := "gem"

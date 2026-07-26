@@ -12,6 +12,7 @@ const POWER_IDS := [
 
 var _activations: Array[String] = []
 var _protected_indices: Array[int] = []
+var _defused_indices: Array[int] = []
 
 
 func _ready() -> void:
@@ -23,6 +24,9 @@ func _ready() -> void:
 	GameManager.bomb_protected.connect(
 		func(bomb_index: int, _power_up_id: String) -> void:
 			_protected_indices.append(bomb_index)
+	)
+	GameManager.bomb_defused.connect(
+		func(bomb_index: int) -> void: _defused_indices.append(bomb_index)
 	)
 
 	var gameplay := GAMEPLAY_SCENE.instantiate()
@@ -61,9 +65,27 @@ func _test_reward_schedule_and_gem_collection(gameplay: Control) -> void:
 	assert(GameManager.get_reward_snapshot().is_empty())
 	assert(GameManager._reward_spawn_remaining >= 7.0)
 	assert(GameManager._reward_spawn_remaining <= 11.0)
+	# Do not spawn onto a grid that is about to be rebuilt for the next stage.
+	GameManager._pending_stage_index = 1
+	GameManager._reward_spawn_remaining = 0.0
+	GameManager._process_reward(0.0)
+	assert(GameManager.get_reward_snapshot().is_empty())
+	GameManager._pending_stage_index = -1
+
+	# An almost-expired active bomb cannot receive a transient reward. This
+	# applies before reward type selection, so it covers both Gems and power-ups.
+	for active_bomb_index in GameManager.get_active_bomb_indices():
+		GameManager._bomb_time_remaining[active_bomb_index] = (
+			GameManager.REWARD_ACTIVE_TARGET_MIN_REMAINING_SECONDS - 0.01
+		)
 	GameManager._reward_spawn_remaining = 0.0
 	GameManager._process_reward(0.0)
 	assert(GameManager.get_reward_snapshot()["reward_type"] == "gem")
+	assert(
+		not GameManager.get_active_bomb_indices().has(
+			int(GameManager.get_reward_snapshot()["bomb_index"])
+		)
+	)
 	assert(is_equal_approx(
 		float(GameManager.get_reward_snapshot()["duration_seconds"]),
 		GameManager.REWARD_LIFETIME_SECONDS
@@ -348,11 +370,19 @@ func _test_combo_and_chain_defuse(gameplay: Control) -> void:
 	assert(PowerUpManager.get_score_multiplier() == 2)
 	assert(_activations.has("combo_boost"))
 
+	# Use a three-bomb wave so this test distinguishes Super Defuse from the old
+	# behavior that resolved only one additional armed bomb.
+	GameManager._stage_index = 3
+	GameManager._pending_stage_index = -1
+	GameManager._build_initial_layout()
 	assert(PowerUpManager.add_quantity("chain_defuse", 1))
 	var score_before := GameManager.current_score
 	var defusals_before := GameManager.current_defusals
 	var lifetime_before := SaveManager.get_lifetime_defusals()
-	var active_index: int = GameManager.get_active_bomb_indices()[0]
+	var armed_before: Array[int] = GameManager.get_active_bomb_indices()
+	assert(armed_before.size() == 3)
+	_defused_indices.clear()
+	var active_index: int = armed_before[0]
 	assert(GameManager.handle_bomb_tapped(active_index))
 	assert(
 		PowerUpManager.get_quantity("chain_defuse") == 0,
@@ -360,11 +390,13 @@ func _test_combo_and_chain_defuse(gameplay: Control) -> void:
 		% PowerUpManager.get_quantity("chain_defuse")
 	)
 	assert(_activations.has("chain_defuse"))
-	assert(GameManager.current_score == score_before + 4)
-	assert(GameManager.current_defusals == defusals_before + 2)
-	assert(SaveManager.get_lifetime_defusals() == lifetime_before + 2)
+	assert(GameManager.current_score == score_before + 6)
+	assert(GameManager.current_defusals == defusals_before + 3)
+	assert(SaveManager.get_lifetime_defusals() == lifetime_before + 3)
+	for armed_index in armed_before:
+		assert(_defused_indices.has(armed_index))
 	assert(is_equal_approx(PowerUpManager.get_timed_effect_remaining("chain_defuse"), 6.0))
-	assert(GameManager.get_active_bomb_indices().size() == 2)
+	assert(GameManager.get_active_bomb_indices().size() == 3)
 	assert(gameplay.get_node("%SuperDefuseGlow").visible)
 
 	GameManager._update_resolution_cooldowns(
@@ -376,13 +408,17 @@ func _test_combo_and_chain_defuse(gameplay: Control) -> void:
 	assert(GameManager.current_lives == lives_before_safe_tap)
 	assert(_protected_indices.has(inactive_index))
 
-	# A second manual defusal within the window chains again without consuming a
-	# second item. This is the behavior that distinguishes it from the old one-shot.
-	active_index = GameManager.get_active_bomb_indices()[0]
+	# A second manual defusal within the window clears its entire current wave
+	# again without consuming a second item.
+	armed_before = GameManager.get_active_bomb_indices()
+	_defused_indices.clear()
+	active_index = armed_before[0]
 	assert(GameManager.handle_bomb_tapped(active_index))
-	assert(GameManager.current_score == score_before + 8)
-	assert(GameManager.current_defusals == defusals_before + 4)
-	assert(SaveManager.get_lifetime_defusals() == lifetime_before + 4)
+	assert(GameManager.current_score == score_before + 12)
+	assert(GameManager.current_defusals == defusals_before + 6)
+	assert(SaveManager.get_lifetime_defusals() == lifetime_before + 6)
+	for armed_index in armed_before:
+		assert(_defused_indices.has(armed_index))
 	assert(PowerUpManager.get_quantity("chain_defuse") == 0)
 	PowerUpManager._process(6.01)
 	assert(is_equal_approx(PowerUpManager.get_timed_effect_remaining("chain_defuse"), 0.0))

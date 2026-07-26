@@ -23,7 +23,12 @@ func show_reward(
 	display_name: String,
 	reward_amount: int = 1
 ) -> void:
-	visible = true
+	# Configure every child while the badge is hidden so a reused badge cannot
+	# render its previous Gem/power-up icon for one frame.
+	visible = false
+	gem_icon.visible = false
+	gem_amount_label.visible = false
+	power_icon.visible = false
 	var is_gem := reward_type == "gem"
 	gem_icon.visible = is_gem
 	gem_amount_label.visible = is_gem
@@ -32,7 +37,9 @@ func show_reward(
 	power_icon.texture = definition.icon if definition != null else null
 	power_icon.visible = reward_type == "power_up" and power_icon.texture != null
 	tooltip_text = display_name
-	_start_pulse()
+	visible = is_gem or power_icon.visible
+	if visible:
+		_start_pulse()
 
 
 func clear_reward() -> void:

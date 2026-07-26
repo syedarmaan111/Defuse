@@ -10,6 +10,7 @@ func _ready() -> void:
 	retry_button.pressed.connect(_on_retry_pressed)
 	NetworkManager.wifi_connection_changed.connect(_refresh_status)
 	NetworkManager.internet_availability_changed.connect(_refresh_status)
+	NetworkManager.connection_check_finished.connect(_on_connection_check_finished)
 	_refresh_status(false)
 
 
@@ -17,7 +18,9 @@ func _on_retry_pressed() -> void:
 	status_label.text = "Checking connection…"
 	retry_button.disabled = true
 	NetworkManager.refresh_connection_state()
-	await get_tree().create_timer(0.35).timeout
+
+
+func _on_connection_check_finished(_is_available: bool) -> void:
 	retry_button.disabled = false
 	_refresh_status(false)
 

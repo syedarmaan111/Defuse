@@ -88,9 +88,9 @@ Scenes/UI/
 
 ## Online, Sign-In, and Cloud Save Requirements
 
-Implementation note: the online launch gate is temporarily disabled through
-`defuse/online_gate/enabled=false` while the base game is built. Its code and
-automated regression coverage remain in place for later Android device testing.
+Implementation note: the Android online launch gate is enabled through
+`defuse/online_gate/enabled=true`. Desktop/headless development uses the explicit
+non-Android bypass; Android exports ignore that bypass and fail closed.
 
 ### Internet Connection Gate
 
@@ -329,8 +329,8 @@ Bombs guard against double resolution. Bomb explosion is local; neighboring bomb
 - Slow Motion starts on pickup and immediately slows active bomb timers.
 - Combo Boost starts on pickup and doubles scoring for its configured duration.
 - Super Defuse starts its configured window on pickup; each manual defusal in
-  that window automatically resolves the most urgent additional bomb, and
-  unarmed bomb taps do not cost lives while the effect is active.
+  that window automatically resolves every bomb currently armed, and unarmed
+  bomb taps do not cost lives while the effect is active.
 
 ### Pre-Play Countdown and Revive Grace
 
