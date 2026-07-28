@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="GameModeCatalog" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Data/game_mode_catalog.gd" id="1_catalog"]
+[ext_resource type="Resource" path="res://Resources/Content/GameModes/Endless.tres" id="2_endless"]
+[ext_resource type="Resource" path="res://Resources/Content/GameModes/Zen.tres" id="3_zen"]
+[ext_resource type="Resource" path="res://Resources/Content/GameModes/Memory.tres" id="4_memory"]
+[ext_resource type="Resource" path="res://Resources/Content/GameModes/TimeAttack.tres" id="5_time"]
+[ext_resource type="Resource" path="res://Resources/Content/GameModes/Precision.tres" id="6_precision"]
+[ext_resource type="Resource" path="res://Resources/Content/GameModes/Hardcore.tres" id="7_hardcore"]
+
+[resource]
+script = ExtResource("1_catalog")
+modes = Array[Resource]([ExtResource("2_endless"), ExtResource("3_zen"), ExtResource("4_memory"), ExtResource("5_time"), ExtResource("6_precision"), ExtResource("7_hardcore")])

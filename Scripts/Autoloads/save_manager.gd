@@ -119,15 +119,34 @@ func mark_cloud_sync_complete(uploaded_revision: int) -> void:
 
 
 func get_best_score() -> int:
-	return _data.best_score
+	return get_mode_best_score("endless")
 
 
-func set_best_score(value: int) -> void:
+func set_best_score(value: int) -> bool:
+	return set_mode_best_score("endless", value)
+
+
+func get_mode_best_score(mode_id: String) -> int:
+	if not SaveData.MODE_IDS.has(mode_id):
+		return 0
+	return int(_data.best_scores_by_mode.get(mode_id, 0))
+
+
+func set_mode_best_score(mode_id: String, value: int) -> bool:
+	if not SaveData.MODE_IDS.has(mode_id):
+		return false
 	var safe_value: int = max(value, 0)
-	if _data.best_score == safe_value:
-		return
-	_data.best_score = safe_value
+	if get_mode_best_score(mode_id) == safe_value:
+		return false
+	_data.best_scores_by_mode[mode_id] = safe_value
+	if mode_id == "endless":
+		_data.best_score = safe_value
 	_commit_local_change()
+	return true
+
+
+func get_mode_best_scores() -> Dictionary:
+	return _data.best_scores_by_mode.duplicate(true)
 
 
 func get_lifetime_defusals() -> int:

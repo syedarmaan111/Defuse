@@ -7,7 +7,10 @@ const BOMB_CELL_SCENE := preload("res://Scenes/Gameplay/BombCell.tscn")
 
 @onready var pause_button: Button = %PauseButton
 @onready var score_label: Label = %ScoreLabel
+@onready var mode_label: Label = %ModeLabel
+@onready var mode_phase_label: Label = %ModePhaseLabel
 @onready var gem_count_label: Label = %GemCountLabel
+@onready var lives_container: HBoxContainer = %Lives
 @onready var safe_margins: MarginContainer = $SafeMargins
 @onready var board_area: CenterContainer = %BoardArea
 @onready var bomb_grid: GridContainer = %BombGrid
@@ -33,6 +36,8 @@ var _scan_tween: Tween
 var _slow_tint_tween: Tween
 var _super_defuse_glow_tween: Tween
 var _status_tweens: Dictionary = {}
+var _pending_touch_indices: Array[int] = []
+var _touch_batch_flush_queued := false
 
 
 func _ready() -> void:
@@ -40,12 +45,16 @@ func _ready() -> void:
 	resized.connect(_queue_grid_layout)
 	board_area.resized.connect(_queue_grid_layout)
 	GameManager.score_changed.connect(_on_score_changed)
+	GameManager.mode_selected.connect(_on_mode_selected)
+	GameManager.mode_phase_changed.connect(_on_mode_phase_changed)
+	GameManager.run_timer_changed.connect(_on_run_timer_changed)
 	GameManager.lives_changed.connect(_on_lives_changed)
 	GameManager.bomb_layout_changed.connect(_on_bomb_layout_changed)
 	GameManager.bomb_timer_changed.connect(_on_bomb_timer_changed)
 	GameManager.bomb_defused.connect(_on_bomb_defused)
 	GameManager.bomb_exploded.connect(_on_bomb_exploded)
 	GameManager.bomb_protected.connect(_on_bomb_protected)
+	GameManager.memory_cell_state_changed.connect(_on_memory_cell_state_changed)
 	GameManager.reward_spawned.connect(_on_reward_spawned)
 	GameManager.reward_removed.connect(_on_reward_removed)
 	GameManager.revive_grace_changed.connect(_on_revive_grace_changed)
@@ -80,7 +89,51 @@ func _process(_delta: float) -> void:
 		]
 
 
+func _input(event: InputEvent) -> void:
+	## Buttons do not reliably accept more than one touchscreen pointer. Capture
+	## every finger-down at board level and resolve all presses from this frame as
+	## one batch so the first finger cannot change the layout for later fingers.
+	if (
+		not is_visible_in_tree()
+		or not event is InputEventScreenTouch
+		or not (event as InputEventScreenTouch).pressed
+	):
+		return
+	var touch_event := event as InputEventScreenTouch
+	var bomb_index := _get_bomb_index_at_screen_position(touch_event.position)
+	if bomb_index < 0:
+		return
+	if not _pending_touch_indices.has(bomb_index):
+		_pending_touch_indices.append(bomb_index)
+	if not _touch_batch_flush_queued:
+		_touch_batch_flush_queued = true
+		call_deferred("_flush_touch_batch")
+	get_viewport().set_input_as_handled()
+
+
+func _get_bomb_index_at_screen_position(screen_position: Vector2) -> int:
+	for cell in _bomb_cells:
+		if cell.get_global_rect().has_point(screen_position):
+			return cell.bomb_index
+	return -1
+
+
+func _flush_touch_batch() -> void:
+	_touch_batch_flush_queued = false
+	if _pending_touch_indices.is_empty():
+		return
+	var touch_indices := _pending_touch_indices.duplicate()
+	_pending_touch_indices.clear()
+	GameManager.handle_bombs_tapped(touch_indices)
+
+
 func _apply_run_snapshot(snapshot: Dictionary) -> void:
+	mode_label.text = str(snapshot.get("mode_name", "Classic")).to_upper()
+	_refresh_mode_header(
+		str(snapshot.get("mode_id", "endless")),
+		str(snapshot.get("mode_phase", "RUNNING")),
+		float(snapshot.get("run_time_remaining", 0.0))
+	)
 	_on_score_changed(int(snapshot.get("score", 0)))
 	_on_lives_changed(
 		int(snapshot.get("lives", GameManager.MAXIMUM_LIVES)),
@@ -90,21 +143,65 @@ func _apply_run_snapshot(snapshot: Dictionary) -> void:
 		int(snapshot.get("grid_side", 2)),
 		_to_int_array(snapshot.get("active_bomb_indices", []))
 	)
+	if str(snapshot.get("mode_id", "")) == "memory":
+		var memory_phase := str(snapshot.get("mode_phase", "PREVIEW"))
+		var revealed := _to_int_array(snapshot.get("memory_revealed", []))
+		if memory_phase == "PREVIEW":
+			for bomb_index in _to_int_array(snapshot.get("memory_pattern", [])):
+				_on_memory_cell_state_changed(bomb_index, "preview")
+		elif (
+			memory_phase == "RECALL"
+			or (
+				memory_phase == "INTERMISSION"
+				and bool(snapshot.get("memory_completion_visible", false))
+			)
+		):
+			for bomb_index in _to_int_array(snapshot.get("memory_pattern", [])):
+				_on_memory_cell_state_changed(
+					bomb_index,
+					"correct" if revealed.has(bomb_index) else "hidden"
+				)
 
 
 func _on_score_changed(score: int) -> void:
-	score_label.text = "SCORE  %d" % max(score, 0)
+	var caption := (
+		"LEVEL"
+		if GameManager.get_current_mode_id() in ["precision", "memory"]
+		else "SCORE"
+	)
+	score_label.text = "%s  %d" % [caption, max(score, 0)]
+
+
+func _on_mode_selected(_mode_id: String, definition: GameModeDefinition) -> void:
+	mode_label.text = definition.display_name.to_upper()
+	_refresh_mode_header(definition.mode_id, definition.initial_phase_name, definition.run_duration_seconds)
+	_on_score_changed(GameManager.current_score)
+
+
+func _on_mode_phase_changed(phase_name: String, remaining_seconds: float) -> void:
+	_refresh_mode_header(GameManager.get_current_mode_id(), phase_name, remaining_seconds)
+
+
+func _on_run_timer_changed(remaining_seconds: float, total_seconds: float) -> void:
+	if total_seconds <= 0.0:
+		return
+	_refresh_mode_header(GameManager.get_current_mode_id(), "TIME", remaining_seconds)
 
 
 func _on_lives_changed(lives: int, maximum_lives: int) -> void:
-	for life_index in maximum_lives:
-		var life_icon := get_node_or_null("%" + ("Life%d" % (life_index + 1))) as LifeHeart
+	lives_container.visible = maximum_lives > 0
+	for life_index in GameManager.MAXIMUM_LIVES:
+		var life_icon := get_node_or_null(
+			"%" + ("Life%d" % (life_index + 1))
+		) as LifeHeart
 		if life_icon != null:
+			life_icon.visible = life_index < maximum_lives
 			life_icon.filled = life_index < lives
 
 
 func _on_bomb_layout_changed(grid_side: int, active_bomb_indices: Array[int]) -> void:
-	_current_grid_side = clampi(grid_side, 2, 4)
+	var maximum_grid_side := 5 if GameManager.get_current_mode_id() == "memory" else 4
+	_current_grid_side = clampi(grid_side, 2, maximum_grid_side)
 	_active_bomb_indices = active_bomb_indices.duplicate()
 	var required_cell_count := _current_grid_side * _current_grid_side
 	if _bomb_cells.size() != required_cell_count:
@@ -112,7 +209,12 @@ func _on_bomb_layout_changed(grid_side: int, active_bomb_indices: Array[int]) ->
 	for cell in _bomb_cells:
 		cell.clear_reward()
 		cell.set_grid_side(_current_grid_side)
-		cell.set_active(_active_bomb_indices.has(cell.bomb_index))
+		cell.set_active(
+			_active_bomb_indices.has(cell.bomb_index)
+			and GameManager.get_current_mode_id() != "memory"
+		)
+		if GameManager.get_current_mode_id() == "memory":
+			cell.set_memory_state("hidden")
 		cell.set_scan_mode(_scan_is_active)
 		cell.set_scanned(cell.bomb_index == _scan_target)
 		cell.set_slow_motion(_slow_motion_is_active)
@@ -132,6 +234,19 @@ func _on_bomb_layout_changed(grid_side: int, active_bomb_indices: Array[int]) ->
 			float(reward.get("duration_seconds", 0.0))
 		)
 	_queue_grid_layout()
+
+
+func _on_memory_cell_state_changed(bomb_index: int, state_name: String) -> void:
+	var cell := _get_bomb_cell(bomb_index)
+	if cell != null:
+		cell.set_memory_state(state_name)
+
+
+func _refresh_mode_header(
+	mode_id: String, _phase_name: String, remaining_seconds: float
+) -> void:
+	mode_phase_label.visible = mode_id == "time_attack"
+	mode_phase_label.text = "TIME  %d" % ceili(maxf(remaining_seconds, 0.0))
 
 
 func _on_bomb_timer_changed(
@@ -366,7 +481,9 @@ func _refresh_grid_layout() -> void:
 	var available_side := minf(board_area.size.x, board_area.size.y) * 0.98
 	var grid_side_pixels := minf(available_side, 1000.0)
 	var separation := (
-		6
+		4
+		if _current_grid_side == 5
+		else 6
 		if _current_grid_side == 4
 		else clampi(roundi(grid_side_pixels * 0.024), 8, 24)
 	)
@@ -379,9 +496,9 @@ func _refresh_grid_layout() -> void:
 		cell.custom_minimum_size = Vector2.ONE * maxf(cell_size, 72.0)
 	call_deferred("_refresh_super_defuse_glow_layout")
 
-	# The dense 4x4 stage uses more of the screen width. The outer 20px margin
-	# still keeps content clear of the edge while making each touch target larger.
-	var horizontal_margin := 20 if _current_grid_side == 4 else 48
+	# Dense Memory boards use more of the screen width while retaining a small
+	# safe edge. This keeps every 5x5 cell comfortably tappable on phones.
+	var horizontal_margin := 12 if _current_grid_side == 5 else 20 if _current_grid_side == 4 else 48
 	safe_margins.add_theme_constant_override("margin_left", horizontal_margin)
 	safe_margins.add_theme_constant_override("margin_right", horizontal_margin)
 
@@ -396,7 +513,7 @@ func _refresh_super_defuse_glow_layout() -> void:
 
 
 func get_presented_score() -> int:
-	return int(score_label.text.trim_prefix("SCORE  "))
+	return int(score_label.text.get_slice("  ", 1))
 
 
 func get_bomb_count() -> int:

@@ -1,0 +1,136 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/mode_card.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/PrimaryButton.tscn" id="2_primary"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_card"]
+bg_color = Color(0.94, 0.91, 0.86, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 7
+border_color = Color(0.31, 0.29, 0.25, 0.3)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+shadow_color = Color(0.08, 0.07, 0.06, 0.15)
+shadow_size = 8
+shadow_offset = Vector2(0, 5)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_progress_bg"]
+bg_color = Color(0.82, 0.79, 0.73, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_progress_fill"]
+bg_color = Color(0.27, 0.38, 0.37, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="ModeCard" type="PanelContainer"]
+clip_contents = true
+custom_minimum_size = Vector2(0, 288)
+mouse_filter = 1
+theme_override_styles/panel = SubResource("StyleBox_card")
+script = ExtResource("1_script")
+
+[node name="ArtLayer" type="Control" parent="."]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="BackgroundArt" type="TextureRect" parent="ArtLayer"]
+unique_name_in_owner = true
+modulate = Color(1, 1, 1, 0.34)
+layout_mode = 1
+anchors_preset = 15
+anchor_left = 0.52
+anchor_right = 1.0
+anchor_bottom = 0.54
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 28
+
+[node name="Content" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="HBoxContainer" parent="Margin/Content"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="NameLabel" type="Label" parent="Margin/Content/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.14, 0.16, 0.17, 1)
+theme_override_colors/font_shadow_color = Color(0.968627, 0.952941, 0.92549, 0.8)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 40
+text = "CLASSIC"
+
+[node name="RecordLabel" type="Label" parent="Margin/Content/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.25, 0.35, 0.34, 1)
+theme_override_colors/font_shadow_color = Color(0.968627, 0.952941, 0.92549, 0.85)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 21
+text = "BEST  0  DEFUSALS"
+vertical_alignment = 1
+
+[node name="RulesLabel" type="Label" parent="Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.34, 0.34, 0.31, 1)
+theme_override_colors/font_shadow_color = Color(0.968627, 0.952941, 0.92549, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 23
+text = "Mode rules"
+autowrap_mode = 2
+
+[node name="UnlockLabel" type="Label" parent="Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.43, 0.4, 0.34, 1)
+theme_override_font_sizes/font_size = 19
+text = "AVAILABLE NOW"
+
+[node name="UnlockProgress" type="ProgressBar" parent="Margin/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+mouse_filter = 2
+show_percentage = false
+theme_override_styles/background = SubResource("StyleBox_progress_bg")
+theme_override_styles/fill = SubResource("StyleBox_progress_fill")
+
+[node name="PlayButton" parent="Margin/Content" instance=ExtResource("2_primary")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 2
+mouse_filter = 1
+text = "PLAY  >"

@@ -52,8 +52,12 @@ func report_purchase_failed(product_id: String, error_code: String) -> void:
 	purchase_failed.emit(product_id, error_code)
 
 
-func report_purchases_restored(product_ids: Array[String]) -> void:
-	purchases_restored.emit(product_ids)
+func report_purchases_restored(product_ids: Variant) -> void:
+	var restored_ids: Array[String] = []
+	if product_ids is Array or product_ids is PackedStringArray:
+		for product_id in product_ids:
+			restored_ids.append(str(product_id))
+	purchases_restored.emit(restored_ids)
 
 
 func _emit_provider_unavailable(product_id: String) -> void:
@@ -61,4 +65,5 @@ func _emit_provider_unavailable(product_id: String) -> void:
 
 
 func _emit_restore_unavailable() -> void:
-	purchases_restored.emit([])
+	var restored_ids: Array[String] = []
+	purchases_restored.emit(restored_ids)

@@ -75,11 +75,20 @@ theme_override_font_sizes/font_size = 42
 text = "☠\nGAME OVER"
 horizontal_alignment = 1
 
-[node name="YourScore" type="Label" parent="CenterMargins/Center/Popup/Content"]
+[node name="ModeLabel" type="Label" parent="CenterMargins/Center/Popup/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.73, 0.38, 0.14, 1)
+theme_override_font_sizes/font_size = 22
+text = "CLASSIC"
+horizontal_alignment = 1
+
+[node name="ScoreCaption" type="Label" parent="CenterMargins/Center/Popup/Content"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.45, 0.4, 0.34, 1)
 theme_override_font_sizes/font_size = 21
-text = "SCORE"
+text = "DEFUSALS"
 horizontal_alignment = 1
 
 [node name="ScoreLabel" type="Label" parent="CenterMargins/Center/Popup/Content"]
@@ -97,11 +106,12 @@ theme_override_styles/panel = SubResource("StyleBox_score")
 [node name="Box" type="VBoxContainer" parent="CenterMargins/Center/Popup/Content/BestScore"]
 layout_mode = 2
 
-[node name="Title" type="Label" parent="CenterMargins/Center/Popup/Content/BestScore/Box"]
+[node name="BestScoreCaption" type="Label" parent="CenterMargins/Center/Popup/Content/BestScore/Box"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.45, 0.4, 0.34, 1)
 theme_override_font_sizes/font_size = 18
-text = "BEST SCORE"
+text = "BEST DEFUSALS"
 horizontal_alignment = 1
 
 [node name="BestScoreLabel" type="Label" parent="CenterMargins/Center/Popup/Content/BestScore/Box"]

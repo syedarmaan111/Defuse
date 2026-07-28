@@ -44,7 +44,7 @@ func _test_profile_presentation() -> void:
 	assert(state["has_settings_entry"])
 
 	profile.get_node("%SettingsButton").pressed.emit()
-	assert("Settings milestone" in profile.get_node("%SettingsStatus").text)
+	assert("Sound and audio preferences" in profile.get_node("%SettingsStatus").text)
 	profile.queue_free()
 
 

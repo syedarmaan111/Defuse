@@ -15,7 +15,7 @@ This document is the implementation roadmap. Its rules supersede older conflicti
 
 ## Current Repository Status
 
-- Milestones 1 through 13 are complete.
+- Milestones 1 through 15 are complete.
 - `Main.tscn` coordinates responsive Home, Shop, Profile, Gameplay, network,
   sign-in, Pause, and Game Over scenes built from real Godot `Control` nodes.
 - Manager-owned, signal-driven foundations cover launch gating, cloud/local
@@ -25,7 +25,10 @@ This document is the implementation roadmap. Its rules supersede older conflicti
   explosions, score, lives, exact active-bomb counts, all five stages, pause
   gating, guarded resolution, wave-safe stage changes, game-over finalization,
   best-score persistence, and an enlarged finger-friendly 4x4 layout.
-- Android release configuration and final device validation remain in Milestone 14.
+- The shared game-mode foundation plus Time Attack, Zen, and Hardcore are
+  complete. Precision, Memory, and final mode integration remain in
+  Milestones 16 through 18.
+- Android release configuration and final device validation remain in Milestone 19.
 - Live billing and real-money content remain deliberately unimplemented under
   the payment hold above.
 
@@ -150,18 +153,28 @@ Scripts/Data/
   save_data.gd
   skin_definition.gd
   power_up_definition.gd
+  game_stage_definition.gd
+  game_mode_definition.gd
+  game_mode_catalog.gd
   shop_offer_definition.gd
   acquisition_option.gd
   content_catalog.gd
 
 Resources/Content/
   ContentCatalog.tres
+  GameModes/
   Skins/default_bomb.tres
   PowerUps/
   Offers/
 ```
 
 `SkinDefinition` and `PowerUpDefinition` include stable ID, display name, description, icon, gameplay assets, availability, and `acquisition_options`. A standard future addition requires only assets plus a Resource/catalog entry; never item-specific screen code or layout nodes.
+
+`GameStageDefinition`, `GameModeDefinition`, and `GameModeCatalog` provide the
+same stable-ID, data-driven boundary for mode progression, life rules, timers,
+score labels, reward policy, power-up availability, revive availability, and
+unlock requirements. Gameplay screens query the selected definition instead
+of duplicating a scene for each mode.
 
 `AcquisitionOption` supports:
 
@@ -215,7 +228,8 @@ AdManager
 - `CommerceManager`: dormant provider-neutral compatibility boundary; it must
   remain unavailable and must not be expanded while payments are deferred.
 - `SaveManager`: schema validation, migration, local cache persistence, and cloud-sync requests.
-- `GameManager`: run state, gameplay clocks, score, lives, stages, countdown, and revive grace.
+- `GameManager`: selected mode, run state, gameplay clocks, score, lives,
+  stages/phases, countdown, and revive grace.
 - `AdManager`: banner/interstitial/rewarded-ad behavior only.
 
 Key event contracts:
@@ -241,6 +255,7 @@ save_version
 save_revision
 modified_at_unix
 best_score
+best_scores_by_mode
 lifetime_defusal_score
 currencies["gems"]
 owned_skin_ids
@@ -256,6 +271,20 @@ pending_interstitial
 ```
 
 Migrate legacy `total_gems` to `currencies["gems"]` and `selected_skin` to `equipped_skin_id`. Missing/invalid equipped skin defaults to `default_bomb`; initial ownership always contains `default_bomb`.
+
+Milestone 14 raises the save schema to version 3. Migrate the existing
+`best_score` into `best_scores_by_mode["endless"]`; continue serializing
+`best_score` as an Endless compatibility alias. Missing mode records default
+to zero, malformed values and unknown mode IDs are ignored, and unlocks are
+derived from `lifetime_defusal_score` rather than stored separately.
+
+Mode-aware persistence interfaces:
+
+```text
+get_mode_best_score(mode_id) -> int
+set_mode_best_score(mode_id, value) -> bool
+get_mode_best_scores() -> Dictionary
+```
 
 ## Shop, Profile, and Checkpoint Choice
 
@@ -273,7 +302,11 @@ Migrate legacy `total_gems` to `currencies["gems"]` and `selected_skin` to `equi
 
 ### Profile
 
-Profile displays selected skin preview, best score, lifetime defusals, earned Gems, owned skin count, unlocked power-up count, and settings entry. It does not add social features, avatars, cloud-account management, achievements, or leaderboards.
+Profile displays selected skin preview, a compact six-mode record section,
+lifetime defusals, earned Gems, owned skin count, unlocked power-up count, and
+settings entry. Home continues to show the Endless best. Profile does not add
+social features, avatars, cloud-account management, achievements, or
+leaderboards.
 
 ### Temporary 20-Defusal Power-Up Choice
 
@@ -285,6 +318,9 @@ Profile displays selected skin preview, best score, lifetime defusals, earned Ge
   undecided until payment work is explicitly resumed.
 
 ## Gameplay Rules
+
+These are the baseline Endless rules. The mode section below explicitly lists
+every override used by another mode.
 
 ### Stages
 
@@ -336,9 +372,167 @@ Bombs guard against double resolution. Bomb explosion is local; neighboring bomb
 
 - New runs start immediately. Show the reusable `3 → 2 → 1` countdown only after Pause resume and a rewarded revive.
 - During countdown, bomb timers, reward spawns, score progression, and gameplay input are paused. Only one countdown can exist at once.
-- A rewarded revive restores one life, rebuilds fresh stage-appropriate bombs, shows the countdown, and then starts one temporary grace effect.
+- Unless a mode override below says otherwise, a rewarded revive restores one
+  life, rebuilds fresh stage-appropriate bombs, shows the countdown, and then
+  starts one temporary grace effect.
 - For five gameplay seconds after the revive countdown, active bomb timer speed smoothly changes from 75% to 100%. All bombs armed in that window use the live rate multiplier.
 - The grace effect does not alter saved stage data, future runs, score, Gems, or later normal bomb timing.
+
+## Game Modes
+
+The current game becomes **Endless**. All modes reuse the same gameplay scene,
+bomb cells, supplied assets/audio, economy, pause flow, ads, and cloud-save
+boundary. A typed mode definition selects behavior; never duplicate the
+gameplay scene per mode.
+
+| Mode | Unlock | Lives | Power-ups | Gem rewards | Revive | Lifetime credit |
+|---|---:|---:|---|---|---|---|
+| Endless | Immediate | 3 | Yes | Grid | Yes | Yes |
+| Zen | 500 | 3 | Yes | Grid | Yes | Yes |
+| Memory | 500 | 3 | No | Pattern completion | Yes | No |
+| Time Attack | 700 | None | No | Grid | No | No |
+| Precision | 1000 | 3 | No | Grid | Yes | Yes |
+| Hardcore | 1000 | 1 | No | Grid | Yes | Yes |
+
+Unlock thresholds use saved lifetime defusals. Only successful bomb defusals
+in Endless, Zen, Precision, and Hardcore increase lifetime defusals, advance
+temporary power-up checkpoint rewards, and unlock modes. Time Attack defusals
+and Memory targets/patterns do not grant lifetime credit.
+
+### Mode Selection and Shared Contracts
+
+- Home `PLAY` opens a responsive Mode Select screen styled from the existing
+  warm panels, rounded controls, typography, safe margins, and banner spacing.
+- Mode cards show rules, current best, availability, unlock requirement, and
+  current lifetime progress. Locked starts are rejected before ads or gameplay
+  state changes.
+- Selector order is Endless, Zen, Memory, Time Attack, Precision, Hardcore.
+- Play Again repeats the current mode. Pause Quit and Game Over Quit return to
+  Mode Select. Back from Mode Select returns Home.
+- Each mode has its own saved best. Score units are Defusals for standard
+  modes and Patterns for Memory.
+- Gameplay HUD shows the current mode and any mode clock/phase. Time Attack
+  hides Lives; Hardcore shows one heart.
+
+Required manager interfaces:
+
+```text
+start_game(mode_id = "endless")
+restart_current_mode()
+return_to_mode_select()
+get_current_mode_id() -> String
+get_current_mode_definition() -> GameModeDefinition
+get_mode_phase_name() -> String
+get_run_time_remaining() -> float
+get_maximum_lives() -> int
+are_power_ups_enabled_for_run() -> bool
+is_mode_unlocked(mode_id) -> bool
+```
+
+Parameterless `start_game()` remains compatible and starts Endless.
+
+Required mode signals:
+
+```text
+mode_selected(mode_id, definition)
+mode_start_rejected(mode_id, reason)
+mode_phase_changed(phase_name, remaining_seconds)
+run_timer_changed(remaining_seconds, total_seconds)
+memory_cell_state_changed(bomb_index, state_name)
+memory_pattern_completed(pattern_score, gem_amount)
+```
+
+### Endless
+
+Endless preserves the current five-stage progression, three lives, immediate
+replacement behavior, mixed Gem/power-up rewards, scoring, lifetime credit,
+and one rewarded revive per run.
+
+### Time Attack
+
+Time Attack lasts exactly 120 active gameplay seconds:
+
+| Defusals | Grid | Active bombs | Bomb timer |
+|---:|---:|---:|---:|
+| 0 | 2x2 | 2 | 2.20s |
+| 20 | 3x3 | 3 | 1.95s |
+| 50 | 3x3 | 5 | 1.70s |
+| 90 | 4x4 | 6 | 1.50s |
+| 140 | 4x4 | 8 | 1.30s |
+
+- Correct defusals score one and immediately backfill the active set.
+- Wrong taps and expired bombs show localized explosions but never remove
+  lives. The mode has no life system.
+- Pause, resume countdown, and other non-running phases freeze the run clock.
+- At zero, clear the board and finalize once with `time_up`.
+- Gem grid rewards remain available. Power-ups, revive, and lifetime credit
+  are disabled.
+
+### Zen
+
+- Reuse Endless grids, active-count thresholds, penalties, scoring, rewards,
+  and power-ups.
+- Every stage uses a 2.60-second base bomb timer. Slow Motion may temporarily
+  make the live timer slower.
+- Correct defusals grant lifetime credit.
+- Allow one rewarded revive.
+
+### Hardcore
+
+- Reuse Endless grid and active-count progression with a 1.50-second timer
+  from the beginning.
+- Maximum lives is one; the first unprotected timeout or inactive tap ends the
+  attempt.
+- Disable power-ups, retain Gem grid rewards, and grant lifetime credit.
+- Allow one rewarded revive. Restore the single life, build a fresh
+  stage-appropriate wave, run the existing countdown, and apply normal revive
+  grace.
+
+### Precision
+
+- Reuse Endless thresholds, grids, and wave sizes.
+- Begin each fuse at 50% and grant the matching remaining half of the normal
+  stage timer, producing 1.30/1.125/0.975/0.85/0.75-second timers.
+- Arm the complete wave simultaneously. Resolving one bomb never spawns an
+  individual replacement.
+- After the complete wave resolves, enter a 1.50-second input-safe rest before
+  arming the next complete wave. Apply pending stage changes during this rest.
+- Every expired bomb removes one life; simultaneous misses may remove multiple
+  lives.
+- Disable power-ups, retain Gem grid rewards, and grant lifetime credit for
+  each correct bomb.
+- Allow one rewarded revive. Restore one of three lives, discard the failed
+  wave, create a fresh complete wave at the current stage, run the countdown,
+  and apply revive grace.
+
+### Memory
+
+| Completed-pattern score | Grid | Targets |
+|---:|---:|---:|
+| 0-2 | 3x3 | 4 |
+| 3-5 | 3x3 | 5 |
+| 6-9 | 4x4 | 6 |
+| 10+ | 4x4 | 7, capped |
+
+1. Choose unique random target cells and avoid an identical consecutive
+   pattern.
+2. Render each target at the final armed frame for 2.50 seconds. Disable input
+   and do not start bomb timers or fuse audio.
+3. Hide the pattern and begin untimed recall.
+4. Correct targets become fully armed and remain revealed. Repeated taps on an
+   already-correct target are ignored.
+5. A wrong cell explodes, removes one life, and leaves the same pattern and
+   correct reveals in progress.
+6. Completing every target adds one Pattern point, automatically grants a Gem
+   amount using the normal 65% one/25% two/10% five distribution, shows Gem
+   feedback, keeps the complete pattern lit for 0.75 seconds, clears the grid
+   for 0.75 seconds, and starts the next pattern.
+
+Memory has three lives, no power-ups, no grid Gem badge, and no lifetime
+credit. One rewarded revive is available: restore one life, preserve the
+  score/tier and exact failed pattern, clear prior reveals, run the revive
+  countdown, preview that same pattern again for 2.50 seconds, and restart its
+recall. Timer grace is not applied because Memory has no bomb timers.
 
 ## Advertising and Revenue Protection
 
@@ -348,6 +542,8 @@ Bombs guard against double resolution. Bomb explosion is local; neighboring bomb
 - If an interstitial is due while offline, retain one pending opportunity. On internet reconnection, attempt it before the next run.
 - After one normal no-fill/failure, clear the pending flag and allow play; never create an infinite retry block.
 - Rewarded revive is unavailable offline and proceeds directly to normal Game Over.
+- Rewarded revive is available once per run in Endless, Zen, Memory,
+  Precision, and Hardcore. Time Attack never offers revive.
 - Never count an offline/failed request as an impression or reward.
 - A real ad SDK and ad unit IDs are integrated only in Android release
   readiness. Google Play Billing and product IDs are excluded while the payment
@@ -388,7 +584,37 @@ Bombs guard against double resolution. Bomb explosion is local; neighboring bomb
    earned-callback-only rewarded revive, debug simulation, and a release-safe
    native adapter boundary are in place. Billing and purchase restoration are
    not in scope.
-14. **Android Release Readiness and Final Validation** — Configure Play
+14. **Game Mode Foundation, Selection, and Persistence** — Complete. Typed
+   stage/mode definitions, the six-mode catalog, version-3 per-mode records and
+   migration, Mode Select/cards, unlock rendering, locked-start protection,
+   selected-mode navigation, mode-aware snapshots/HUD/results, dynamic lives,
+   and compatibility-preserving Endless startup are in place. Migration,
+   navigation, records, unlock boundaries, and unchanged Endless behavior are
+   covered by dedicated validation.
+15. **Time Attack, Zen, and Hardcore** — Complete. Time Attack now runs for
+   exactly 120 active gameplay seconds across its five-step score curve, has no
+   lives or revive, preserves Gem rewards, and finalizes once with `time_up`.
+   Zen keeps a 2.60-second base timer through every Endless progression stage.
+   Hardcore keeps one life and a 1.50-second timer from the beginning. Their
+   power-up, Gem, lifetime-credit, penalty, pause, and rewarded-revive policies
+   are manager-enforced and covered by deterministic validation.
+16. **Precision Mode** — Implement simultaneous complete waves, the 50%-armed
+   fuse start with matching half timers, 1.50-second wave rests, between-wave stage changes,
+   multi-explosion life loss, Gem-only rewards, lifetime/checkpoint credit,
+   and rewarded revive into a fresh wave. Test wave integrity, expiry,
+   progression, pause, reward, and revive behavior.
+17. **Memory Mode** — Implement preview/recall/intermission phases,
+   2.50-second previews, untimed recall, persistent correct reveals,
+   wrong-tap continuation, 4/5/6/7-target tiers, Pattern scoring, automatic Gem
+   rewards, and same-pattern rewarded revive. Test generation, phases,
+   scoring, mistakes, rewards, lives, pause, and revive deterministically.
+18. **Game Mode Integration and Final Validation** — Enable all completed
+   modes at finalized thresholds; complete selector/Profile record
+   presentation; validate power-up, Gem, lifetime, checkpoint, revive, ad
+   cadence, cloud-save, abandon, and navigation interactions; verify portrait
+   layouts and eight-active-bomb performance; run all legacy and mode suites;
+   update the specifications and publish game-mode validation evidence.
+19. **Android Release Readiness and Final Validation** — Configure Play
    Console, export/signing, ad identifiers, and complete end-to-end tests. Paid
    product configuration is excluded.
 
@@ -398,7 +624,7 @@ Bombs guard against double resolution. Bomb explosion is local; neighboring bomb
   decide whether skins and/or power-ups should be sold, then design the billing
   UX, author paid catalog entries, integrate Google Play Billing, configure
   product IDs, restore purchases, test entitlements, and update release checks.
-  This is not assigned a milestone number and does not block Milestones 8–14.
+  This is not assigned a milestone number and does not block Milestones 8–19.
 
 ## Required Validation
 
@@ -410,10 +636,31 @@ Bombs guard against double resolution. Bomb explosion is local; neighboring bomb
 - New catalog Resources render in Shop without per-item UI code/layout changes.
 - No UI contains a mockup screenshot as the implemented screen.
 - No Gem-purchase route exists.
-- Every inactive non-reward bomb tap costs one life; inactive reward-bomb taps are safe claims.
+- In life-based standard modes, every inactive non-reward bomb tap costs one
+  life and inactive reward-bomb taps are safe claims. Time Attack has no life
+  penalty, while Memory applies its recall-specific target rules.
 - Reward icons pulse and clean up correctly.
 - New runs start immediately; resume and revive each show one 3–2–1 countdown with no gameplay time advancing.
 - Revive grace begins at 75% timer speed and reaches normal speed after five gameplay seconds.
+- Version-2 saves migrate the existing best into an Endless record and preserve
+  six independent non-negative mode records through local/cloud round trips.
+- Mode locks change exactly at 500, 700, and 1000 lifetime defusals, and locked
+  modes cannot be started through UI or manager calls.
+- Only Endless, Zen, Precision, and Hardcore successful bomb defusals increase
+  lifetime/checkpoint progress. Time Attack and Memory never increase it.
+- Time Attack runs for 120 active gameplay seconds, freezes during
+  pause/countdown, carries no lives, and finalizes exactly once at zero.
+- Zen keeps a 2.60-second base timer at every stage; Hardcore keeps a
+  1.50-second timer and one maximum life.
+- Precision never partially refills a wave, waits 1.50 seconds between waves,
+  starts each bomb halfway armed with half of its normal timer, and applies
+  stage changes only between waves.
+- Memory uses a 2.50-second preview, untimed recall, Pattern scoring,
+  non-revealing automatic Gem rewards, and same-pattern revive replay.
+- Rewarded revive is offered once in every life-based mode and never in Time
+  Attack. Memory replay does not award score or Gems.
+- Power-up effects cannot spawn or activate in Time Attack, Precision,
+  Hardcore, or Memory.
 - Offline interstitial deferral is persisted and attempted once after reconnection; ad failure never traps the player.
 - All save, inventory, and currency UI refreshes are signal-driven.
 - No paid acquisition button, billing request, product ID, or purchase-restore
@@ -424,6 +671,12 @@ Bombs guard against double resolution. Bomb explosion is local; neighboring bomb
 - Portrait Android, Godot 4.6, GL Compatibility renderer, and 60 FPS target.
 - Gems remain the only active in-game currency.
 - Initial Gem reward chance is 15% unless balance design changes it.
+- Mode unlocks are derived from lifetime defusals and are not saved separately.
+- Memory recall has no deadline. Its automatic Pattern reward uses the normal
+  1/2/5-Gem distribution.
+- Memory and Time Attack do not grant lifetime-defusal credit.
+- Rewarded revive remains limited to once per run. A Hardcore revive restores
+  only one life, and a Memory revive replays the exact failed pattern.
 - No custom backend is currently planned; Google Play Games Saved Games is the cloud-recovery service.
 - Local/global leaderboards, achievements, daily rewards, events, bundles, extra currencies, and social features remain future work, but the catalog/UI architecture must not block them.
 - One milestone is implemented, tested, and approved per future prompt.

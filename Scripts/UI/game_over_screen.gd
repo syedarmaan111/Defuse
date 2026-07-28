@@ -5,6 +5,9 @@ extends Control
 
 @onready var score_label: Label = %ScoreLabel
 @onready var best_score_label: Label = %BestScoreLabel
+@onready var mode_label: Label = %ModeLabel
+@onready var score_caption: Label = %ScoreCaption
+@onready var best_score_caption: Label = %BestScoreCaption
 @onready var play_again_button: Button = %PlayAgainButton
 @onready var revive_button: Button = %ReviveButton
 @onready var quit_button: Button = %QuitButton
@@ -26,6 +29,14 @@ func _ready() -> void:
 
 func set_scores(final_score: int, best_score: int) -> void:
 	## Updates visible score values when a run ends.
+	var definition := GameManager.get_current_mode_definition()
+	mode_label.text = definition.display_name.to_upper()
+	score_caption.text = definition.score_label
+	best_score_caption.text = (
+		"MAXIMUM LEVEL REACHED"
+		if definition.mode_id in ["precision", "memory"]
+		else "BEST %s" % definition.score_label
+	)
 	score_label.text = str(max(final_score, 0))
 	best_score_label.text = str(max(best_score, 0))
 
@@ -43,7 +54,7 @@ func _animate_popup() -> void:
 
 
 func _on_play_again_pressed() -> void:
-	GameManager.start_game()
+	GameManager.restart_current_mode()
 
 
 func _on_revive_pressed() -> void:
@@ -66,4 +77,4 @@ func _refresh_revive_button() -> void:
 
 
 func _on_quit_pressed() -> void:
-	GameManager.return_to_home()
+	GameManager.return_to_mode_select()

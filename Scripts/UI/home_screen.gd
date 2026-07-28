@@ -20,9 +20,7 @@ func _ready() -> void:
 
 
 func _on_play_pressed() -> void:
-	## Requests the gameplay UI screen.
-	## Real gameplay startup is intentionally deferred to later milestones.
-	GameManager.start_game()
+	GameManager.show_mode_select_if_ready()
 
 
 func _on_save_snapshot(_snapshot: Dictionary) -> void:

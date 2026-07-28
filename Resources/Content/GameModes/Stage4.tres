@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="GameStageDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Data/game_stage_definition.gd" id="1_stage"]
+
+[resource]
+script = ExtResource("1_stage")
+stage_number = 4
+grid_side = 3
+active_bombs = 3
+timer_seconds = 1.7
+starts_at = 45

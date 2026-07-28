@@ -113,17 +113,47 @@ theme_override_constants/separation = 18
 [node name="BannerAdSlot" parent="SafeMargins/Content" unique_id=749154246 instance=ExtResource("4_banner")]
 layout_mode = 2
 
+[node name="ModeStatus" type="VBoxContainer" parent="SafeMargins/Content"]
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="ModeLabel" type="Label" parent="SafeMargins/Content/ModeStatus"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.18, 0.24, 0.24, 1)
+theme_override_colors/font_shadow_color = Color(0.1, 0.1, 0.09, 0.18)
+theme_override_constants/shadow_offset_y = 3
+theme_override_font_sizes/font_size = 38
+text = "CLASSIC"
+horizontal_alignment = 1
+
+[node name="ModePhaseLabel" type="Label" parent="SafeMargins/Content/ModeStatus"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.27, 0.38, 0.37, 1)
+theme_override_colors/font_shadow_color = Color(0.1, 0.1, 0.09, 0.12)
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 28
+text = "TIME  60"
+horizontal_alignment = 1
+
 [node name="Hud" type="HBoxContainer" parent="SafeMargins/Content" unique_id=1488626401]
 layout_mode = 2
 
-[node name="PauseButton" type="Button" parent="SafeMargins/Content/Hud" unique_id=1537617071]
+[node name="LeftHudSlot" type="CenterContainer" parent="SafeMargins/Content/Hud"]
+custom_minimum_size = Vector2(148, 78)
+layout_mode = 2
+
+[node name="PauseButton" type="Button" parent="SafeMargins/Content/Hud/LeftHudSlot" unique_id=1537617071]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(72, 64)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.156863, 0.188235, 0.2, 1)
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 26
 theme_override_styles/normal = SubResource("StyleBox_hud")
-text = "Ⅱ"
+text = "II"
 
 [node name="HudSpacerLeft" type="Control" parent="SafeMargins/Content/Hud" unique_id=1264716497]
 layout_mode = 2
@@ -135,7 +165,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.156863, 0.188235, 0.2, 1)
 theme_override_colors/font_shadow_color = Color(0.1, 0.1, 0.09, 0.2)
 theme_override_constants/shadow_offset_y = 2
-theme_override_font_sizes/font_size = 34
+theme_override_font_sizes/font_size = 40
 text = "SCORE  0"
 vertical_alignment = 1
 
@@ -169,6 +199,7 @@ theme_override_font_sizes/font_size = 30
 text = "0"
 
 [node name="Lives" type="HBoxContainer" parent="SafeMargins/Content" unique_id=139245710]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 10
 alignment = 1

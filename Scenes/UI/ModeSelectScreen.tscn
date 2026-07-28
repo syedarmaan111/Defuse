@@ -1,0 +1,112 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/mode_select_screen.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/SecondaryButton.tscn" id="2_secondary"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Components/BannerAdSlot.tscn" id="3_banner"]
+
+[node name="ModeSelectScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.968627, 0.952941, 0.92549, 1)
+
+[node name="SafeMargins" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 38
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 40
+
+[node name="Content" type="VBoxContainer" parent="SafeMargins"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="BannerAdSlot" parent="SafeMargins/Content" instance=ExtResource("3_banner")]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="SafeMargins/Content"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="BackButton" parent="SafeMargins/Content/Header" instance=ExtResource("2_secondary")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 78)
+layout_mode = 2
+text = "<  BACK"
+
+[node name="TitleBlock" type="VBoxContainer" parent="SafeMargins/Content/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Eyebrow" type="Label" parent="SafeMargins/Content/Header/TitleBlock"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.51, 0.45, 1)
+theme_override_font_sizes/font_size = 21
+text = "CHOOSE YOUR CHALLENGE"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="SafeMargins/Content/Header/TitleBlock"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.13, 0.16, 0.17, 1)
+theme_override_colors/font_shadow_color = Color(0.1, 0.12, 0.12, 0.13)
+theme_override_constants/shadow_offset_y = 3
+theme_override_font_sizes/font_size = 58
+text = "GAME MODES"
+horizontal_alignment = 1
+
+[node name="HeaderBalance" type="Control" parent="SafeMargins/Content/Header"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="LifetimeLabel" type="Label" parent="SafeMargins/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.27, 0.38, 0.37, 1)
+theme_override_font_sizes/font_size = 24
+text = "0 LIFETIME DEFUSALS"
+horizontal_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="SafeMargins/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.18, 0.12, 1)
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Scroll" type="ScrollContainer" parent="SafeMargins/Content"]
+layout_mode = 2
+size_flags_vertical = 3
+scroll_deadzone = 8
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
+
+[node name="Cards" type="VBoxContainer" parent="SafeMargins/Content/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 1
+theme_override_constants/separation = 18

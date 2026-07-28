@@ -1,0 +1,79 @@
+[gd_resource type="Resource" script_class="GameModeDefinition" format=3 uid="uid://bjhjt2ucot5a0"]
+
+[ext_resource type="Script" uid="uid://dtcb4wlvhwvkb" path="res://Scripts/Data/game_mode_definition.gd" id="1_mode"]
+[ext_resource type="Script" uid="uid://cn72b7m7ase5k" path="res://Scripts/Data/game_stage_definition.gd" id="2_stage"]
+
+[sub_resource type="Resource" id="Stage_memory_1"]
+script = ExtResource("2_stage")
+grid_side = 3
+active_bombs = 4
+timer_seconds = 1.0
+
+[sub_resource type="Resource" id="Stage_memory_2"]
+script = ExtResource("2_stage")
+stage_number = 2
+grid_side = 3
+active_bombs = 5
+timer_seconds = 1.0
+starts_at = 3
+
+[sub_resource type="Resource" id="Stage_memory_3"]
+script = ExtResource("2_stage")
+stage_number = 3
+grid_side = 4
+active_bombs = 6
+timer_seconds = 1.0
+starts_at = 6
+
+[sub_resource type="Resource" id="Stage_memory_4"]
+script = ExtResource("2_stage")
+stage_number = 4
+grid_side = 4
+active_bombs = 7
+timer_seconds = 1.0
+starts_at = 9
+
+[sub_resource type="Resource" id="Stage_memory_5"]
+script = ExtResource("2_stage")
+stage_number = 5
+grid_side = 4
+active_bombs = 8
+timer_seconds = 1.0
+starts_at = 12
+
+[sub_resource type="Resource" id="Stage_memory_6"]
+script = ExtResource("2_stage")
+stage_number = 6
+grid_side = 5
+active_bombs = 8
+timer_seconds = 1.0
+starts_at = 15
+
+[sub_resource type="Resource" id="Stage_memory_7"]
+script = ExtResource("2_stage")
+stage_number = 7
+grid_side = 5
+active_bombs = 9
+timer_seconds = 1.0
+starts_at = 19
+
+[sub_resource type="Resource" id="Stage_memory_8"]
+script = ExtResource("2_stage")
+stage_number = 8
+grid_side = 5
+active_bombs = 10
+timer_seconds = 1.0
+starts_at = 24
+
+[resource]
+script = ExtResource("1_mode")
+mode_id = "memory"
+display_name = "Memory"
+rules_summary = "Study the preview, then recall every target with no timer. Patterns and grids grow as your level rises."
+score_label = "LEVEL"
+unlock_lifetime_defusals = 500
+power_ups_enabled = false
+grid_gem_rewards_enabled = false
+lifetime_credit_enabled = false
+initial_phase_name = "PREVIEW"
+stages = Array[ExtResource("2_stage")]([SubResource("Stage_memory_1"), SubResource("Stage_memory_2"), SubResource("Stage_memory_3"), SubResource("Stage_memory_4"), SubResource("Stage_memory_5"), SubResource("Stage_memory_6"), SubResource("Stage_memory_7"), SubResource("Stage_memory_8")])

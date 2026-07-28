@@ -6,6 +6,11 @@ extends Control
 @onready var skin_preview: TextureRect = %SkinPreview
 @onready var skin_name_label: Label = %SkinNameLabel
 @onready var best_score_card: ProfileStatCard = %BestScoreCard
+@onready var zen_best_card: ProfileStatCard = %ZenBestCard
+@onready var memory_best_card: ProfileStatCard = %MemoryBestCard
+@onready var time_attack_best_card: ProfileStatCard = %TimeAttackBestCard
+@onready var precision_best_card: ProfileStatCard = %PrecisionBestCard
+@onready var hardcore_best_card: ProfileStatCard = %HardcoreBestCard
 @onready var lifetime_card: ProfileStatCard = %LifetimeCard
 @onready var gems_card: ProfileStatCard = %GemsCard
 @onready var skins_card: ProfileStatCard = %SkinsCard
@@ -31,6 +36,14 @@ func get_presented_state() -> Dictionary:
 		"skin_name": skin_name_label.text,
 		"has_skin_preview": skin_preview.texture != null,
 		"best_score": best_score_card.get_value(),
+		"mode_records": {
+			"endless": best_score_card.get_value(),
+			"zen": zen_best_card.get_value(),
+			"memory": memory_best_card.get_value(),
+			"time_attack": time_attack_best_card.get_value(),
+			"precision": precision_best_card.get_value(),
+			"hardcore": hardcore_best_card.get_value(),
+		},
 		"lifetime_defusals": lifetime_card.get_value(),
 		"gems": gems_card.get_value(),
 		"owned_skins": skins_card.get_value(),
@@ -53,7 +66,13 @@ func _on_visibility_changed() -> void:
 
 
 func _refresh_profile(snapshot: Dictionary) -> void:
-	best_score_card.set_value(max(int(snapshot.get("best_score", 0)), 0))
+	var records := SaveData.from_dictionary(snapshot).best_scores_by_mode
+	best_score_card.set_value(int(records["endless"]))
+	zen_best_card.set_value(int(records["zen"]))
+	memory_best_card.set_value(int(records["memory"]))
+	time_attack_best_card.set_value(int(records["time_attack"]))
+	precision_best_card.set_value(int(records["precision"]))
+	hardcore_best_card.set_value(int(records["hardcore"]))
 	lifetime_card.set_value(max(int(snapshot.get("lifetime_defusal_score", 0)), 0))
 	gems_card.set_value(EconomyManager.get_gem_balance())
 	skins_card.set_value(SkinManager.get_owned_skin_ids().size())

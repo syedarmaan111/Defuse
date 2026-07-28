@@ -6,10 +6,11 @@ class_name BombCell
 
 signal bomb_pressed(bomb_index: int)
 
-# Sample the supplied 61-image sequence at a mobile-friendly cadence. The red
-# shader remains smooth every frame while limiting simultaneous GPU residency.
-const SOURCE_FRAME_COUNT := 61
+# Sample the supplied sequence at a mobile-friendly cadence, stopping on its
+# fully armed frame so the final explosion artwork is reserved for failures.
 const DISPLAY_FRAME_COUNT := 16
+const ACTIVE_SOURCE_FRAME_INDEX := 58
+const PRECISION_START_PROGRESS := 0.5
 const BOMB_CROP_REGION := Rect2(250.0, 180.0, 560.0, 750.0)
 
 static var _frame_textures: Dictionary = {}
@@ -27,6 +28,7 @@ var _base_visual_scale := 1.0
 var _is_scanned := false
 var _scan_mode_active := false
 var _slow_motion_active := false
+var _memory_state := ""
 var _effect_tween: Tween
 var _scan_pulse_tween: Tween
 
@@ -48,8 +50,8 @@ func set_active(active: bool, animate: bool = true) -> void:
 
 
 func set_grid_side(grid_side: int) -> void:
-	## 4x4 cells enlarge their artwork inside the already full-cell touch target.
-	_base_visual_scale = 1.16 if grid_side == 4 else 1.0
+	## Dense grids enlarge their artwork inside the already full-cell touch target.
+	_base_visual_scale = 1.2 if grid_side >= 5 else 1.16 if grid_side == 4 else 1.0
 	if _effect_tween == null:
 		bomb_image.scale = Vector2.ONE * _base_visual_scale
 
@@ -82,11 +84,43 @@ func set_slow_motion(is_active: bool) -> void:
 	_refresh_power_up_visuals()
 
 
+func set_memory_state(state_name: String) -> void:
+	_memory_state = state_name.to_lower()
+	_cancel_effect()
+	_reset_effect_visuals()
+	is_active = false
+	touch_target.disabled = false
+	match _memory_state:
+		"preview":
+			_render_memory_bomb(Color.WHITE)
+			touch_target.tooltip_text = "Memorize this target"
+		"correct":
+			_render_memory_bomb(Color(0.55, 1.0, 0.62, 1.0))
+			touch_target.tooltip_text = "Correct target"
+		_:
+			_reset_inactive_visuals()
+			touch_target.tooltip_text = "Hidden memory cell"
+
+
+func _render_memory_bomb(tint: Color) -> void:
+	timer_ratio = 0.0
+	bomb_image.texture = _get_frame_texture(DISPLAY_FRAME_COUNT - 1)
+	bomb_image.modulate = tint
+	var cleanup_material := bomb_image.material as ShaderMaterial
+	if cleanup_material != null:
+		cleanup_material.set_shader_parameter("danger_progress", 1.0)
+
+
 func set_timer(remaining_seconds: float, duration_seconds: float) -> void:
 	if not is_active or duration_seconds <= 0.0:
 		return
 	timer_ratio = clampf(remaining_seconds / duration_seconds, 0.0, 1.0)
-	var danger_progress := 1.0 - timer_ratio
+	var elapsed_progress := 1.0 - timer_ratio
+	var danger_progress := elapsed_progress
+	if GameManager.get_current_mode_id() == "precision":
+		danger_progress = lerpf(
+			PRECISION_START_PROGRESS, 1.0, elapsed_progress
+		)
 	var frame_index := clampi(
 		floori(danger_progress * float(DISPLAY_FRAME_COUNT - 1)),
 		0,
@@ -257,11 +291,13 @@ func _refresh_power_up_visuals() -> void:
 
 
 func _get_frame_texture(frame_index: int) -> AtlasTexture:
-	if _frame_textures.has(frame_index):
-		return _frame_textures[frame_index] as AtlasTexture
 	var source_frame_index := roundi(
-		float(frame_index) * float(SOURCE_FRAME_COUNT - 1) / float(DISPLAY_FRAME_COUNT - 1)
+		float(frame_index)
+		* float(ACTIVE_SOURCE_FRAME_INDEX)
+		/ float(DISPLAY_FRAME_COUNT - 1)
 	)
+	if _frame_textures.has(source_frame_index):
+		return _frame_textures[source_frame_index] as AtlasTexture
 	var file_number := 1 if source_frame_index == 0 else source_frame_index + 3
 	var source_texture := load(
 		"res://Assets/Bomb/Animation/%04d.png" % file_number
@@ -269,7 +305,7 @@ func _get_frame_texture(frame_index: int) -> AtlasTexture:
 	var cropped_texture := AtlasTexture.new()
 	cropped_texture.atlas = source_texture
 	cropped_texture.region = BOMB_CROP_REGION
-	_frame_textures[frame_index] = cropped_texture
+	_frame_textures[source_frame_index] = cropped_texture
 	return cropped_texture
 
 

@@ -1,7 +1,7 @@
 extends Control
 
 ## PauseMenu shows a real responsive dialog over blurred gameplay.
-## Resume returns to gameplay, while Quit returns to Home.
+## Resume returns to gameplay, while Quit returns to Mode Select.
 
 @onready var resume_button: Button = %ResumeButton
 @onready var quit_button: Button = %QuitButton
@@ -30,4 +30,4 @@ func _on_resume_pressed() -> void:
 
 
 func _on_quit_pressed() -> void:
-	GameManager.return_to_home()
+	GameManager.return_to_mode_select()

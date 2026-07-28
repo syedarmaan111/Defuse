@@ -19,6 +19,18 @@ func _ready() -> void:
 
 	GameManager.start_game()
 	GameManager._finish_countdown()
+	var active_index: int = GameManager.get_active_bomb_indices()[0]
+	var timer_before_background := GameManager.get_bomb_time_remaining(active_index)
+	main._notification(NOTIFICATION_APPLICATION_PAUSED)
+	assert(GameManager.get_current_screen_name() == "pause")
+	assert(GameManager.get_run_state_name() == "paused")
+	GameManager._process(1.0)
+	assert(is_equal_approx(
+		GameManager.get_bomb_time_remaining(active_index), timer_before_background
+	))
+
+	GameManager.resume_game()
+	GameManager._finish_countdown()
 	main._handle_mobile_back()
 	assert(GameManager.get_current_screen_name() == "pause")
 	assert(main.get_node("OverlayRoot/PauseMenu").visible)

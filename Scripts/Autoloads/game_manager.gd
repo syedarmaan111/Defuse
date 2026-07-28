@@ -6,7 +6,14 @@ extends Node
 
 signal screen_changed(screen_name: String)
 signal game_over_requested(final_score: int, best_score: int)
+signal mode_selected(mode_id: String, definition: GameModeDefinition)
+signal mode_start_rejected(mode_id: String, reason: String)
+signal mode_phase_changed(phase_name: String, remaining_seconds: float)
+signal run_timer_changed(remaining_seconds: float, total_seconds: float)
+signal memory_cell_state_changed(bomb_index: int, state_name: String)
+signal memory_pattern_completed(pattern_score: int, gem_amount: int)
 signal run_started(snapshot: Dictionary)
+signal run_finished(reason: String, final_score: int)
 signal run_state_changed(state_name: String)
 signal score_changed(score: int)
 signal lives_changed(lives: int, maximum_lives: int)
@@ -42,6 +49,7 @@ enum ScreenName {
 	NETWORK_REQUIRED,
 	SIGN_IN,
 	HOME,
+	MODE_SELECT,
 	GAMEPLAY,
 	PAUSE,
 	GAME_OVER
@@ -56,6 +64,11 @@ enum RunState {
 }
 
 const MAXIMUM_LIVES := 3
+const DEFAULT_MODE_ID := "endless"
+const ALL_MODES_TEMPORARILY_UNLOCKED := true
+const MODE_CATALOG: GameModeCatalog = preload(
+	"res://Resources/Content/GameModes/GameModeCatalog.tres"
+)
 const COUNTDOWN_START_VALUE := 3
 const COUNTDOWN_STEP_SECONDS := 0.8
 const REVIVE_GRACE_DURATION_SECONDS := 5.0
@@ -68,6 +81,15 @@ const REWARD_ACTIVE_TARGET_MIN_REMAINING_SECONDS := 0.75
 const POWER_UP_REWARD_CHANCE := 0.75
 const GEM_REWARD_ONE_CHANCE := 0.65
 const GEM_REWARD_TWO_CHANCE := 0.25
+const PRECISION_REST_SECONDS := 1.5
+const MEMORY_PREVIEW_SECONDS := 2.5
+const MEMORY_MINIMUM_PREVIEW_SECONDS := 1.8
+const MEMORY_PREVIEW_REDUCTION_PER_LEVEL := 0.04
+const MEMORY_COMPLETION_REVEAL_SECONDS := 0.75
+const MEMORY_INACTIVE_PAUSE_SECONDS := 0.75
+const MEMORY_INTERMISSION_SECONDS := (
+	MEMORY_COMPLETION_REVEAL_SECONDS + MEMORY_INACTIVE_PAUSE_SECONDS
+)
 const STAGE_DEFINITIONS := [
 	{"stage": 1, "grid_side": 2, "active_bombs": 1, "timer_seconds": 2.6, "starts_at": 0},
 	{"stage": 2, "grid_side": 2, "active_bombs": 2, "timer_seconds": 2.25, "starts_at": 10},
@@ -82,6 +104,7 @@ var current_run_state: RunState = RunState.IDLE
 var current_score: int = 0
 var current_defusals: int = 0
 var current_lives: int = MAXIMUM_LIVES
+var current_mode_id: String = DEFAULT_MODE_ID
 
 var _stage_index := 0
 var _pending_stage_index := -1
@@ -99,6 +122,16 @@ var _revive_used := false
 var _rewarded_revive_request_in_flight := false
 var _revive_grace_remaining := 0.0
 var _run_completion_recorded := false
+var _pending_start_mode_id := DEFAULT_MODE_ID
+var _mode_phase_name := "RUNNING"
+var _run_time_remaining := 0.0
+var _run_end_reason := ""
+var _mode_phase_remaining := 0.0
+var _phase_before_pause := "RUNNING"
+var _memory_pattern: Array[int] = []
+var _memory_previous_pattern: Array[int] = []
+var _memory_revealed: Array[int] = []
+var _memory_completion_visible := false
 
 
 func _ready() -> void:
@@ -115,10 +148,22 @@ func _process(delta: float) -> void:
 		return
 	if current_run_state != RunState.RUNNING:
 		return
+	if current_mode_id == "memory":
+		_process_memory_mode(delta)
+		return
+	if current_mode_id == "precision" and _mode_phase_name == "REST":
+		_advance_precision_rest(delta)
+		return
+	if _advance_run_timer(delta):
+		return
 	_update_resolution_cooldowns(delta)
 	var timer_delta := (
 		delta
-		* PowerUpManager.get_timer_speed_multiplier()
+		* (
+			PowerUpManager.get_timer_speed_multiplier()
+			if are_power_ups_enabled_for_run()
+			else 1.0
+		)
 		* get_revive_grace_timer_multiplier()
 	)
 	var expired_bombs: Array[int] = []
@@ -133,9 +178,10 @@ func _process(delta: float) -> void:
 		bomb_timer_changed.emit(bomb_index, remaining, duration)
 		if remaining <= 0.0:
 			expired_bombs.append(bomb_index)
-	PowerUpManager.evaluate_timer_pressure(
-		get_active_bomb_indices(), _bomb_time_remaining, _bomb_timer_durations
-	)
+	if are_power_ups_enabled_for_run():
+		PowerUpManager.evaluate_timer_pressure(
+			get_active_bomb_indices(), _bomb_time_remaining, _bomb_timer_durations
+		)
 	for bomb_index in expired_bombs:
 		if current_run_state != RunState.RUNNING:
 			break
@@ -164,7 +210,10 @@ func get_run_state_name() -> String:
 
 
 func get_current_stage_config() -> Dictionary:
-	return STAGE_DEFINITIONS[_stage_index].duplicate(true)
+	var stages := _get_stage_definitions()
+	if stages.is_empty():
+		return STAGE_DEFINITIONS[0].duplicate(true)
+	return stages[clampi(_stage_index, 0, stages.size() - 1)].to_dictionary()
 
 
 func get_active_bomb_indices() -> Array[int]:
@@ -180,9 +229,10 @@ func get_bomb_timer_duration(bomb_index: int) -> float:
 
 
 func get_pending_stage_number() -> int:
+	var stages := _get_stage_definitions()
 	return (
-		int(STAGE_DEFINITIONS[_pending_stage_index]["stage"])
-		if _pending_stage_index >= 0
+		stages[_pending_stage_index].stage_number
+		if _pending_stage_index >= 0 and _pending_stage_index < stages.size()
 		else 0
 	)
 
@@ -191,10 +241,18 @@ func get_run_snapshot() -> Dictionary:
 	## Gives UI and tests one immutable view of the current run.
 	return {
 		"state": get_run_state_name(),
+		"mode_id": current_mode_id,
+		"mode_name": get_current_mode_definition().display_name,
+		"score_label": get_current_mode_definition().score_label,
+		"mode_phase": get_mode_phase_name(),
+		"run_time_remaining": get_run_time_remaining(),
+		"run_end_reason": get_run_end_reason(),
 		"score": current_score,
 		"successful_defusals": current_defusals,
 		"lives": current_lives,
-		"maximum_lives": MAXIMUM_LIVES,
+		"maximum_lives": get_maximum_lives(),
+		"has_life_system": get_current_mode_definition().has_life_system,
+		"power_ups_enabled": are_power_ups_enabled_for_run(),
 		"stage": int(get_current_stage_config()["stage"]),
 		"grid_side": int(get_current_stage_config()["grid_side"]),
 		"active_bombs": int(get_current_stage_config()["active_bombs"]),
@@ -204,6 +262,9 @@ func get_run_snapshot() -> Dictionary:
 		"revive_used": _revive_used,
 		"revive_grace_remaining": _revive_grace_remaining,
 		"revive_grace_multiplier": get_revive_grace_timer_multiplier(),
+		"memory_pattern": _memory_pattern.duplicate(),
+		"memory_revealed": _memory_revealed.duplicate(),
+		"memory_completion_visible": _memory_completion_visible,
 	}
 
 
@@ -211,17 +272,74 @@ func get_reward_snapshot() -> Dictionary:
 	return _reward_data.duplicate(true)
 
 
-func start_game() -> void:
+func get_mode_definitions() -> Array[GameModeDefinition]:
+	return MODE_CATALOG.modes.duplicate()
+
+
+func get_current_mode_id() -> String:
+	return current_mode_id
+
+
+func get_current_mode_definition() -> GameModeDefinition:
+	var definition := MODE_CATALOG.get_mode(current_mode_id)
+	return definition if definition != null else MODE_CATALOG.get_mode(DEFAULT_MODE_ID)
+
+
+func get_mode_phase_name() -> String:
+	return _mode_phase_name
+
+
+func get_run_time_remaining() -> float:
+	return _run_time_remaining
+
+
+func get_run_end_reason() -> String:
+	return _run_end_reason
+
+
+func get_maximum_lives() -> int:
+	return get_current_mode_definition().maximum_lives
+
+
+func are_power_ups_enabled_for_run() -> bool:
+	return get_current_mode_definition().power_ups_enabled
+
+
+func is_mode_unlocked(mode_id: String) -> bool:
+	var definition := MODE_CATALOG.get_mode(mode_id)
+	return (
+		definition != null
+		and (
+			ALL_MODES_TEMPORARILY_UNLOCKED
+			or SaveManager.get_lifetime_defusals()
+			>= definition.unlock_lifetime_defusals
+		)
+	)
+
+
+func start_game(mode_id: String = DEFAULT_MODE_ID) -> void:
 	## Starts a fresh run only after the existing launch gates are satisfied.
+	var definition := MODE_CATALOG.get_mode(mode_id)
+	if definition == null:
+		mode_start_rejected.emit(mode_id, "unknown_mode")
+		return
+	if not is_mode_unlocked(mode_id):
+		mode_start_rejected.emit(mode_id, "locked")
+		return
 	if not NetworkManager.can_start_game():
 		set_current_screen(ScreenName.NETWORK_REQUIRED)
 		return
 	if not CloudSaveManager.is_gate_satisfied() or not CloudSaveManager.is_restore_ready():
 		set_current_screen(ScreenName.SIGN_IN)
 		return
+	_pending_start_mode_id = mode_id
 	if AdManager.intercept_new_run_request():
 		return
 	_start_game_after_ad()
+
+
+func restart_current_mode() -> void:
+	start_game(current_mode_id)
 
 
 func _start_game_after_ad() -> void:
@@ -234,24 +352,36 @@ func _start_game_after_ad() -> void:
 		set_current_screen(ScreenName.SIGN_IN)
 		return
 
+	var selected_definition := MODE_CATALOG.get_mode(_pending_start_mode_id)
+	if selected_definition == null or not is_mode_unlocked(_pending_start_mode_id):
+		mode_start_rejected.emit(_pending_start_mode_id, "locked")
+		return
+	current_mode_id = _pending_start_mode_id
+	_mode_phase_name = selected_definition.initial_phase_name
+	_run_time_remaining = selected_definition.run_duration_seconds
+	_run_end_reason = ""
 	current_score = 0
 	current_defusals = 0
-	current_lives = MAXIMUM_LIVES
+	current_lives = get_maximum_lives()
 	_stage_index = 0
 	_pending_stage_index = -1
 	_revive_used = false
 	_rewarded_revive_request_in_flight = false
 	_run_completion_recorded = false
+	_reset_special_mode_runtime()
 	_stop_countdown()
 	_stop_revive_grace()
 	_clear_bomb_runtime()
 	_reset_reward_runtime()
 	PowerUpManager.reset_run_effects()
+	mode_selected.emit(current_mode_id, selected_definition)
+	mode_phase_changed.emit(_mode_phase_name, _run_time_remaining)
+	run_timer_changed.emit(_run_time_remaining, selected_definition.run_duration_seconds)
 	set_current_screen(ScreenName.GAMEPLAY)
 	score_changed.emit(current_score)
-	lives_changed.emit(current_lives, MAXIMUM_LIVES)
+	lives_changed.emit(current_lives, get_maximum_lives())
 	stage_changed.emit(1, get_current_stage_config())
-	_build_initial_layout()
+	_start_mode_layout()
 	_set_run_state(RunState.RUNNING)
 	AudioManager.set_gameplay_audio_paused(false)
 	run_started.emit(get_run_snapshot())
@@ -261,7 +391,9 @@ func pause_game() -> void:
 	## Freezes all gameplay clocks and input until Resume starts its countdown.
 	if current_screen != ScreenName.GAMEPLAY or current_run_state != RunState.RUNNING:
 		return
+	_phase_before_pause = _mode_phase_name
 	_set_run_state(RunState.PAUSED)
+	_set_mode_phase("PAUSED")
 	AudioManager.set_gameplay_audio_paused(true)
 	set_current_screen(ScreenName.PAUSE)
 
@@ -288,7 +420,9 @@ func get_countdown_reason() -> String:
 func can_offer_rewarded_revive() -> bool:
 	## Availability requires a ready provider (or explicit debug simulation).
 	return (
-		current_run_state == RunState.GAME_OVER
+		get_current_mode_definition().rewarded_revive_enabled
+		and get_current_mode_definition().has_life_system
+		and current_run_state == RunState.GAME_OVER
 		and current_lives <= 0
 		and not _revive_used
 		and not _rewarded_revive_request_in_flight
@@ -330,6 +464,8 @@ func grant_rewarded_revive() -> bool:
 	## simulation). It preserves score/stage and rebuilds a completely fresh wave.
 	if (
 		current_run_state != RunState.GAME_OVER
+		or not get_current_mode_definition().rewarded_revive_enabled
+		or not get_current_mode_definition().has_life_system
 		or current_lives > 0
 		or _revive_used
 	):
@@ -337,16 +473,24 @@ func grant_rewarded_revive() -> bool:
 		return false
 	_rewarded_revive_request_in_flight = false
 	_revive_used = true
-	current_lives = 1
-	_sync_stage_to_current_defusals()
+	current_lives = mini(1, get_maximum_lives())
+	_sync_stage_to_progress()
 	_clear_bomb_runtime()
 	_reset_reward_runtime()
 	PowerUpManager.reset_run_effects()
-	lives_changed.emit(current_lives, MAXIMUM_LIVES)
+	lives_changed.emit(current_lives, get_maximum_lives())
 	stage_changed.emit(
 		int(get_current_stage_config()["stage"]), get_current_stage_config()
 	)
-	_build_initial_layout()
+	if current_mode_id == "memory":
+		_memory_revealed.clear()
+		_active_bomb_indices = _memory_pattern.duplicate()
+		bomb_layout_changed.emit(
+			int(get_current_stage_config()["grid_side"]), get_active_bomb_indices()
+		)
+		_emit_memory_states("hidden")
+	else:
+		_build_initial_layout()
 	set_current_screen(ScreenName.GAMEPLAY)
 	_begin_countdown("revive")
 	rewarded_revive_granted.emit()
@@ -372,27 +516,59 @@ func get_revive_grace_timer_multiplier() -> float:
 
 
 func handle_bomb_tapped(bomb_index: int) -> bool:
-	## Active taps defuse; inactive taps cause one guarded localized explosion.
+	return handle_bombs_tapped([bomb_index]) > 0
+
+
+func handle_bombs_tapped(bomb_indices: Array[int]) -> int:
+	## Resolves one frame's finger-down events against a single layout snapshot.
+	## This makes true multi-touch deterministic even when several bombs are
+	## pressed before the frame ends.
 	if current_run_state != RunState.RUNNING:
-		return false
+		return 0
+	var unique_indices: Array[int] = []
+	for bomb_index in bomb_indices:
+		if not unique_indices.has(bomb_index):
+			unique_indices.append(bomb_index)
+	if current_mode_id == "memory":
+		return _handle_memory_taps(unique_indices)
+	if current_mode_id == "precision" and _mode_phase_name == "REST":
+		return 0
 	var current_grid_side := int(get_current_stage_config()["grid_side"])
 	var cell_count := current_grid_side ** 2
-	if bomb_index < 0 or bomb_index >= cell_count:
-		return false
-	if int(_reward_data.get("bomb_index", -1)) == bomb_index:
-		_claim_reward()
-		if not _active_bomb_indices.has(bomb_index):
-			return true
-	if _resolution_cooldowns.has(bomb_index):
-		return false
-	if not _active_bomb_indices.has(bomb_index):
+	var active_at_batch_start := _active_bomb_indices.duplicate()
+	var active_taps: Array[int] = []
+	var inactive_taps: Array[int] = []
+	var resolved_indices: Array[int] = []
+	var accepted_count := 0
+	for bomb_index in unique_indices:
+		if bomb_index < 0 or bomb_index >= cell_count:
+			continue
+		if _resolution_cooldowns.has(bomb_index):
+			continue
+		accepted_count += 1
+		if int(_reward_data.get("bomb_index", -1)) == bomb_index:
+			_claim_reward()
+			if not active_at_batch_start.has(bomb_index):
+				continue
+		if active_at_batch_start.has(bomb_index):
+			active_taps.append(bomb_index)
+		else:
+			inactive_taps.append(bomb_index)
+	# Correct simultaneous presses resolve before mistakes can end the run. This
+	# removes any dependence on the order Android assigned to the finger events.
+	for bomb_index in active_taps:
+		# A chain defuse triggered by an earlier finger may already have resolved
+		# this bomb; it still counts as an accepted simultaneous tap.
+		if _active_bomb_indices.has(bomb_index):
+			resolved_indices.append_array(_defuse_active_bomb(bomb_index, true))
+	for bomb_index in inactive_taps:
 		_explode_inactive_bomb(bomb_index)
-		return true
-	_defuse_active_bomb(bomb_index)
-	return true
+	if current_run_state == RunState.RUNNING and not resolved_indices.is_empty():
+		_after_active_bombs_resolved(resolved_indices)
+	return accepted_count
 
 
-func _defuse_active_bomb(bomb_index: int) -> void:
+func _defuse_active_bomb(bomb_index: int, defer_layout_refresh: bool = false) -> Array[int]:
 	## Resolves the tapped active bomb. While Super Defuse is active, the same
 	## action also resolves every other bomb that was armed at that moment.
 	_active_bomb_indices.erase(bomb_index)
@@ -400,12 +576,20 @@ func _defuse_active_bomb(bomb_index: int) -> void:
 	_resolution_cooldowns[bomb_index] = RESOLUTION_GUARD_SECONDS
 	bomb_defused.emit(bomb_index)
 	AudioManager.play_sound("bomb_defused")
-	PowerUpManager.register_successful_defusal()
+	if are_power_ups_enabled_for_run():
+		PowerUpManager.register_successful_defusal()
 	current_defusals += 1
-	current_score += PowerUpManager.get_score_multiplier()
+	current_score += (
+		PowerUpManager.get_score_multiplier()
+		if are_power_ups_enabled_for_run()
+		else 1
+	)
 	score_changed.emit(current_score)
 	var resolved_indices: Array[int] = [bomb_index]
-	if PowerUpManager.try_activate_chain_defuse(_active_bomb_indices.size()):
+	if (
+		are_power_ups_enabled_for_run()
+		and PowerUpManager.try_activate_chain_defuse(_active_bomb_indices.size())
+	):
 		var chained_indices: Array[int] = _active_bomb_indices.duplicate()
 		for chained_index in chained_indices:
 			_active_bomb_indices.erase(chained_index)
@@ -419,9 +603,12 @@ func _defuse_active_bomb(bomb_index: int) -> void:
 			current_score += PowerUpManager.get_score_multiplier()
 			score_changed.emit(current_score)
 			resolved_indices.append(chained_index)
-	SaveManager.add_lifetime_defusals(resolved_indices.size())
+	if get_current_mode_definition().lifetime_credit_enabled:
+		SaveManager.add_lifetime_defusals(resolved_indices.size())
 	_queue_eligible_stage_change()
-	_after_active_bombs_resolved(resolved_indices)
+	if not defer_layout_refresh:
+		_after_active_bombs_resolved(resolved_indices)
+	return resolved_indices
 
 
 func _explode_active_bomb(bomb_index: int) -> void:
@@ -430,7 +617,10 @@ func _explode_active_bomb(bomb_index: int) -> void:
 	_resolution_cooldowns[bomb_index] = RESOLUTION_GUARD_SECONDS
 	if int(_reward_data.get("bomb_index", -1)) == bomb_index:
 		_remove_reward("bomb_expired")
-	if PowerUpManager.try_block_explosion(bomb_index, "timer_expired"):
+	if (
+		are_power_ups_enabled_for_run()
+		and PowerUpManager.try_block_explosion(bomb_index, "timer_expired")
+	):
 		bomb_protected.emit(bomb_index, "shield")
 	else:
 		bomb_exploded.emit(bomb_index, "timer_expired")
@@ -442,9 +632,12 @@ func _explode_active_bomb(bomb_index: int) -> void:
 
 func _explode_inactive_bomb(bomb_index: int) -> void:
 	_resolution_cooldowns[bomb_index] = RESOLUTION_GUARD_SECONDS
-	if PowerUpManager.is_super_defuse_active():
+	if are_power_ups_enabled_for_run() and PowerUpManager.is_super_defuse_active():
 		bomb_protected.emit(bomb_index, "chain_defuse")
-	elif PowerUpManager.try_block_explosion(bomb_index, "inactive_tap"):
+	elif (
+		are_power_ups_enabled_for_run()
+		and PowerUpManager.try_block_explosion(bomb_index, "inactive_tap")
+	):
 		bomb_protected.emit(bomb_index, "shield")
 	else:
 		bomb_exploded.emit(bomb_index, "inactive_tap")
@@ -454,7 +647,18 @@ func _explode_inactive_bomb(bomb_index: int) -> void:
 
 func _after_active_bombs_resolved(resolved_indices: Array[int]) -> void:
 	var current_grid_side := int(get_current_stage_config()["grid_side"])
+	if current_mode_id == "precision":
+		if _active_bomb_indices.is_empty():
+			_begin_precision_rest()
+		else:
+			bomb_layout_changed.emit(current_grid_side, get_active_bomb_indices())
+		return
 	if _pending_stage_index >= 0:
+		# Time Attack follows its score curve immediately. Standard modes retain
+		# the wave-safe transition used by Endless.
+		if current_mode_id == "time_attack":
+			_apply_pending_stage_change()
+			return
 		if _active_bomb_indices.is_empty():
 			_apply_pending_stage_change()
 		else:
@@ -466,23 +670,34 @@ func _after_active_bombs_resolved(resolved_indices: Array[int]) -> void:
 
 func lose_life() -> bool:
 	## This state transition is ready for Milestone 9 bomb explosions to call.
-	if current_run_state != RunState.RUNNING or current_lives <= 0:
+	var maximum_lives := get_maximum_lives()
+	if (
+		current_run_state != RunState.RUNNING
+		or not get_current_mode_definition().has_life_system
+		or current_lives <= 0
+	):
 		return false
 	current_lives -= 1
-	lives_changed.emit(current_lives, MAXIMUM_LIVES)
-	if PowerUpManager.try_restore_life(current_lives, MAXIMUM_LIVES):
+	lives_changed.emit(current_lives, maximum_lives)
+	if are_power_ups_enabled_for_run() and PowerUpManager.try_restore_life(
+		current_lives, maximum_lives
+	):
 		current_lives += 1
-		lives_changed.emit(current_lives, MAXIMUM_LIVES)
+		lives_changed.emit(current_lives, maximum_lives)
 	if current_lives == 0:
 		finish_run()
 	return true
 
 
-func finish_run() -> void:
+func finish_run(reason: String = "lives_depleted") -> void:
 	## Finalizes score once and opens Game Over. It is safe to call repeatedly.
 	if current_run_state not in [RunState.RUNNING, RunState.PAUSED]:
 		return
+	_run_end_reason = reason.strip_edges().to_lower()
+	if _run_end_reason.is_empty():
+		_run_end_reason = "completed"
 	_set_run_state(RunState.GAME_OVER)
+	_set_mode_phase("TIME UP" if _run_end_reason == "time_up" else "GAME OVER")
 	_stop_countdown()
 	_stop_revive_grace()
 	AudioManager.set_gameplay_audio_paused(false)
@@ -493,13 +708,16 @@ func finish_run() -> void:
 	bomb_layout_changed.emit(
 		int(get_current_stage_config()["grid_side"]), get_active_bomb_indices()
 	)
-	if current_score > SaveManager.get_best_score():
-		SaveManager.set_best_score(current_score)
+	if current_score > SaveManager.get_mode_best_score(current_mode_id):
+		SaveManager.set_mode_best_score(current_mode_id, current_score)
 	PowerUpManager.queue_lifetime_checkpoint_choices()
 	_record_run_completion_once()
 	set_current_screen(ScreenName.GAME_OVER)
-	game_over_requested.emit(current_score, SaveManager.get_best_score())
+	game_over_requested.emit(
+		current_score, SaveManager.get_mode_best_score(current_mode_id)
+	)
 	revive_availability_changed.emit(can_offer_rewarded_revive())
+	run_finished.emit(_run_end_reason, current_score)
 
 
 func return_to_home() -> void:
@@ -514,17 +732,59 @@ func return_to_home() -> void:
 	)
 	current_score = 0
 	current_defusals = 0
-	current_lives = MAXIMUM_LIVES
+	current_lives = get_maximum_lives()
 	_stage_index = 0
 	_pending_stage_index = -1
 	_revive_used = false
 	_rewarded_revive_request_in_flight = false
 	_run_completion_recorded = false
+	_run_time_remaining = 0.0
+	_run_end_reason = ""
 	_stop_countdown()
 	_stop_revive_grace()
 	PowerUpManager.queue_lifetime_checkpoint_choices()
 	_set_run_state(RunState.IDLE)
+	_set_mode_phase("IDLE")
 	show_home_if_ready()
+
+
+func return_to_mode_select() -> void:
+	## Abandons a live run and returns to the selector without changing the
+	## selected mode or recording a completed attempt.
+	AudioManager.set_gameplay_audio_paused(false)
+	_clear_bomb_runtime()
+	_clear_reward_runtime("run_abandoned")
+	PowerUpManager.reset_run_effects()
+	_active_bomb_indices.clear()
+	bomb_layout_changed.emit(
+		int(get_current_stage_config()["grid_side"]), get_active_bomb_indices()
+	)
+	current_score = 0
+	current_defusals = 0
+	current_lives = get_maximum_lives()
+	_stage_index = 0
+	_pending_stage_index = -1
+	_revive_used = false
+	_rewarded_revive_request_in_flight = false
+	_run_completion_recorded = false
+	_run_time_remaining = 0.0
+	_run_end_reason = ""
+	_stop_countdown()
+	_stop_revive_grace()
+	PowerUpManager.queue_lifetime_checkpoint_choices()
+	_set_run_state(RunState.IDLE)
+	_set_mode_phase("IDLE")
+	show_mode_select_if_ready()
+
+
+func show_mode_select_if_ready() -> void:
+	if not NetworkManager.can_start_game():
+		set_current_screen(ScreenName.NETWORK_REQUIRED)
+	elif not CloudSaveManager.is_gate_satisfied() or not CloudSaveManager.is_restore_ready():
+		set_current_screen(ScreenName.SIGN_IN)
+	else:
+		UIManager.show_home()
+		set_current_screen(ScreenName.MODE_SELECT)
 
 
 func show_home_if_ready() -> void:
@@ -544,13 +804,18 @@ func show_game_over(final_score: int = 0) -> void:
 		finish_run()
 		return
 	_set_run_state(RunState.GAME_OVER)
-	if current_score > SaveManager.get_best_score():
-		SaveManager.set_best_score(current_score)
+	_run_end_reason = "completed"
+	_set_mode_phase("GAME OVER")
+	if current_score > SaveManager.get_mode_best_score(current_mode_id):
+		SaveManager.set_mode_best_score(current_mode_id, current_score)
 	PowerUpManager.queue_lifetime_checkpoint_choices()
 	_record_run_completion_once()
 	set_current_screen(ScreenName.GAME_OVER)
-	game_over_requested.emit(current_score, SaveManager.get_best_score())
+	game_over_requested.emit(
+		current_score, SaveManager.get_mode_best_score(current_mode_id)
+	)
 	revive_availability_changed.emit(can_offer_rewarded_revive())
+	run_finished.emit(_run_end_reason, current_score)
 
 
 func _set_run_state(next_state: RunState) -> void:
@@ -588,6 +853,7 @@ func _begin_countdown(reason: String) -> bool:
 	_countdown_value = COUNTDOWN_START_VALUE
 	_countdown_step_remaining = COUNTDOWN_STEP_SECONDS
 	_set_run_state(RunState.COUNTDOWN)
+	_set_mode_phase("COUNTDOWN")
 	AudioManager.set_gameplay_audio_paused(true)
 	countdown_started.emit(reason)
 	countdown_tick.emit(_countdown_value, reason)
@@ -612,11 +878,17 @@ func _finish_countdown() -> void:
 	_countdown_value = 0
 	_countdown_step_remaining = 0.0
 	_countdown_reason = ""
-	if finished_reason == "revive":
+	if finished_reason == "revive" and current_mode_id != "memory":
 		_start_revive_grace()
 	_set_run_state(RunState.RUNNING)
 	AudioManager.set_gameplay_audio_paused(false)
 	countdown_finished.emit(finished_reason)
+	if finished_reason == "revive" and current_mode_id == "memory":
+		_begin_memory_pattern(true)
+	elif finished_reason == "resume":
+		_set_mode_phase(_phase_before_pause)
+	else:
+		_set_mode_phase(get_current_mode_definition().initial_phase_name)
 
 
 func _stop_countdown() -> void:
@@ -653,10 +925,11 @@ func _stop_revive_grace() -> void:
 		_revive_grace_remaining = 0.0
 
 
-func _sync_stage_to_current_defusals() -> void:
+func _sync_stage_to_progress() -> void:
 	var target_stage_index := 0
-	for index in STAGE_DEFINITIONS.size():
-		if current_defusals >= int(STAGE_DEFINITIONS[index]["starts_at"]):
+	var stages := _get_stage_definitions()
+	for index in stages.size():
+		if _get_mode_progress() >= stages[index].starts_at:
 			target_stage_index = index
 	_stage_index = target_stage_index
 	_pending_stage_index = -1
@@ -664,8 +937,9 @@ func _sync_stage_to_current_defusals() -> void:
 
 func _queue_eligible_stage_change() -> void:
 	var next_stage_index := _stage_index
-	for index in STAGE_DEFINITIONS.size():
-		if current_defusals >= int(STAGE_DEFINITIONS[index]["starts_at"]):
+	var stages := _get_stage_definitions()
+	for index in stages.size():
+		if _get_mode_progress() >= stages[index].starts_at:
 			next_stage_index = index
 	if next_stage_index > _stage_index:
 		_pending_stage_index = next_stage_index
@@ -686,6 +960,13 @@ func _build_initial_layout() -> void:
 	_clear_bomb_runtime()
 	_active_bomb_indices.clear()
 	_fill_active_layout()
+
+
+func _start_mode_layout() -> void:
+	if current_mode_id == "memory":
+		_begin_memory_pattern(false)
+	else:
+		_build_initial_layout()
 
 
 func _fill_active_layout(excluded_indices: Array[int] = []) -> void:
@@ -794,6 +1075,9 @@ func _schedule_next_reward() -> void:
 
 
 func _process_reward(delta: float) -> void:
+	var definition := get_current_mode_definition()
+	if not definition.grid_gem_rewards_enabled and not definition.power_ups_enabled:
+		return
 	if _reward_data.is_empty():
 		_reward_spawn_remaining = maxf(_reward_spawn_remaining - delta, 0.0)
 		if _reward_spawn_remaining <= 0.0:
@@ -841,7 +1125,9 @@ func _spawn_random_reward() -> void:
 	var reward_id := "gems"
 	var reward_amount := _roll_gem_reward_amount()
 	var display_name := "+%d Gems" % reward_amount
-	var unlocked_power_ups := PowerUpManager.get_enabled_unlocked_ids()
+	var unlocked_power_ups: Array[String] = []
+	if are_power_ups_enabled_for_run():
+		unlocked_power_ups = PowerUpManager.get_enabled_unlocked_ids()
 	if not unlocked_power_ups.is_empty() and _random.randf() < POWER_UP_REWARD_CHANCE:
 		reward_type = "power_up"
 		reward_id = unlocked_power_ups[_random.randi_range(0, unlocked_power_ups.size() - 1)]
@@ -876,11 +1162,14 @@ func _place_reward(
 	reward_amount: int = 1
 ) -> bool:
 	var grid_side := int(get_current_stage_config()["grid_side"])
+	var mode_definition := get_current_mode_definition()
 	if (
 		bomb_index < 0
 		or bomb_index >= grid_side * grid_side
 		or reward_type not in ["gem", "power_up"]
 		or not _reward_data.is_empty()
+		or (reward_type == "gem" and not mode_definition.grid_gem_rewards_enabled)
+		or (reward_type == "power_up" and not are_power_ups_enabled_for_run())
 	):
 		return false
 	_reward_data = {
@@ -916,6 +1205,9 @@ func _claim_reward() -> void:
 	if reward_type == "gem":
 		EconomyManager.earn_gems(reward_amount)
 	else:
+		if not are_power_ups_enabled_for_run():
+			_schedule_next_reward()
+			return
 		var lives_before_activation := current_lives
 		if PowerUpManager.add_quantity(reward_id, reward_amount):
 			var did_activate := PowerUpManager.activate_collected_power_up(
@@ -924,16 +1216,16 @@ func _claim_reward() -> void:
 					"active_bomb_count": _active_bomb_indices.size(),
 					"scan_target": _get_most_urgent_active_bomb(),
 					"current_lives": current_lives,
-					"maximum_lives": MAXIMUM_LIVES,
+					"maximum_lives": get_maximum_lives(),
 				}
 			)
 			if (
 				did_activate
 				and reward_id == "extra_life"
-				and lives_before_activation < MAXIMUM_LIVES
+				and lives_before_activation < get_maximum_lives()
 			):
 				current_lives += 1
-				lives_changed.emit(current_lives, MAXIMUM_LIVES)
+				lives_changed.emit(current_lives, get_maximum_lives())
 	reward_claimed.emit(bomb_index, reward_type, reward_id)
 	_schedule_next_reward()
 
@@ -945,3 +1237,216 @@ func _remove_reward(reason: String) -> void:
 	_reward_data.clear()
 	reward_removed.emit(bomb_index, reason)
 	_schedule_next_reward()
+
+
+func _begin_precision_rest() -> void:
+	_clear_bomb_runtime()
+	_clear_reward_runtime("precision_rest")
+	_active_bomb_indices.clear()
+	bomb_layout_changed.emit(
+		int(get_current_stage_config()["grid_side"]), get_active_bomb_indices()
+	)
+	_mode_phase_remaining = PRECISION_REST_SECONDS
+	_set_mode_phase("REST")
+	mode_phase_changed.emit(_mode_phase_name, _mode_phase_remaining)
+
+
+func _advance_precision_rest(delta: float) -> void:
+	_mode_phase_remaining = maxf(_mode_phase_remaining - maxf(delta, 0.0), 0.0)
+	mode_phase_changed.emit(_mode_phase_name, _mode_phase_remaining)
+	if _mode_phase_remaining > 0.0:
+		return
+	_set_mode_phase("ACTIVE")
+	_reset_reward_runtime()
+	if _pending_stage_index >= 0:
+		_apply_pending_stage_change()
+	else:
+		_build_initial_layout()
+
+
+func _process_memory_mode(delta: float) -> void:
+	_update_resolution_cooldowns(delta)
+	if _mode_phase_name not in ["PREVIEW", "INTERMISSION"]:
+		return
+	_mode_phase_remaining = maxf(_mode_phase_remaining - maxf(delta, 0.0), 0.0)
+	mode_phase_changed.emit(_mode_phase_name, _mode_phase_remaining)
+	if (
+		_mode_phase_name == "INTERMISSION"
+		and _memory_completion_visible
+		and _mode_phase_remaining <= MEMORY_INACTIVE_PAUSE_SECONDS
+	):
+		_memory_completion_visible = false
+		_emit_all_memory_states("hidden")
+	if _mode_phase_remaining > 0.0:
+		return
+	if _mode_phase_name == "PREVIEW":
+		_begin_memory_recall()
+	else:
+		_begin_memory_pattern(false)
+
+
+func _begin_memory_pattern(reuse_current_pattern: bool) -> void:
+	_clear_bomb_runtime()
+	_clear_reward_runtime("memory_pattern")
+	var previous_stage := _stage_index
+	_sync_stage_to_progress()
+	if previous_stage != _stage_index:
+		stage_changed.emit(
+			int(get_current_stage_config()["stage"]), get_current_stage_config()
+		)
+	if not reuse_current_pattern or _memory_pattern.is_empty():
+		_generate_memory_pattern()
+	_memory_revealed.clear()
+	_memory_completion_visible = false
+	_active_bomb_indices = _memory_pattern.duplicate()
+	bomb_layout_changed.emit(
+		int(get_current_stage_config()["grid_side"]), get_active_bomb_indices()
+	)
+	_mode_phase_remaining = get_memory_preview_duration()
+	_set_mode_phase("PREVIEW")
+	_emit_memory_states("preview")
+	mode_phase_changed.emit(_mode_phase_name, _mode_phase_remaining)
+
+
+func _begin_memory_recall() -> void:
+	_mode_phase_remaining = 0.0
+	_memory_completion_visible = false
+	_set_mode_phase("RECALL")
+	_emit_memory_states("hidden")
+
+
+func _handle_memory_tap(bomb_index: int) -> bool:
+	return _handle_memory_taps([bomb_index]) > 0
+
+
+func _handle_memory_taps(bomb_indices: Array[int]) -> int:
+	var grid_side := int(get_current_stage_config()["grid_side"])
+	if _mode_phase_name != "RECALL":
+		return 0
+	var accepted_count := 0
+	for bomb_index in bomb_indices:
+		if (
+			bomb_index < 0
+			or bomb_index >= grid_side * grid_side
+			or _resolution_cooldowns.has(bomb_index)
+		):
+			continue
+		accepted_count += 1
+		if _memory_revealed.has(bomb_index):
+			continue
+		if _memory_pattern.has(bomb_index):
+			_memory_revealed.append(bomb_index)
+			memory_cell_state_changed.emit(bomb_index, "correct")
+			AudioManager.play_sound("bomb_defused")
+		else:
+			_resolution_cooldowns[bomb_index] = RESOLUTION_GUARD_SECONDS
+			bomb_exploded.emit(bomb_index, "memory_mistake")
+			AudioManager.play_sound("bomb_exploded")
+			lose_life()
+	if (
+		current_run_state == RunState.RUNNING
+		and _memory_revealed.size() == _memory_pattern.size()
+	):
+		_complete_memory_pattern()
+	return accepted_count
+
+
+func get_memory_preview_duration() -> float:
+	## Shaves only 40 ms per completed level and keeps a generous lower bound,
+	## so advanced patterns become brisker without turning into a reaction test.
+	return maxf(
+		MEMORY_PREVIEW_SECONDS
+		- float(maxi(current_score, 0)) * MEMORY_PREVIEW_REDUCTION_PER_LEVEL,
+		MEMORY_MINIMUM_PREVIEW_SECONDS
+	)
+
+
+func _complete_memory_pattern() -> void:
+	current_score += 1
+	score_changed.emit(current_score)
+	var gem_amount := _roll_gem_reward_amount()
+	EconomyManager.earn_gems(gem_amount)
+	memory_pattern_completed.emit(current_score, gem_amount)
+	_queue_eligible_stage_change()
+	_mode_phase_remaining = MEMORY_INTERMISSION_SECONDS
+	_memory_completion_visible = true
+	_set_mode_phase("INTERMISSION")
+	# Keep the completed pattern lit long enough for the final tap to render,
+	# then _process_memory_mode clears the board before the next preview.
+	_emit_memory_states("correct")
+	mode_phase_changed.emit(_mode_phase_name, _mode_phase_remaining)
+
+
+func _generate_memory_pattern() -> void:
+	_memory_previous_pattern = _memory_pattern.duplicate()
+	var config := get_current_stage_config()
+	var cell_count := int(config["grid_side"]) ** 2
+	var target_count := mini(int(config["active_bombs"]), cell_count)
+	var generated: Array[int] = []
+	for attempt in 8:
+		var candidates: Array[int] = []
+		for cell_index in cell_count:
+			candidates.append(cell_index)
+		for candidate_index in range(candidates.size() - 1, 0, -1):
+			var swap_index := _random.randi_range(0, candidate_index)
+			var held_value := candidates[candidate_index]
+			candidates[candidate_index] = candidates[swap_index]
+			candidates[swap_index] = held_value
+		generated = candidates.slice(0, target_count)
+		generated.sort()
+		if generated != _memory_previous_pattern:
+			break
+	_memory_pattern = generated
+
+
+func _emit_memory_states(target_state: String) -> void:
+	var cell_count := int(get_current_stage_config()["grid_side"]) ** 2
+	for bomb_index in cell_count:
+		var state := "hidden"
+		if _memory_pattern.has(bomb_index):
+			state = "correct" if _memory_revealed.has(bomb_index) else target_state
+		memory_cell_state_changed.emit(bomb_index, state)
+
+
+func _emit_all_memory_states(target_state: String) -> void:
+	var cell_count := int(get_current_stage_config()["grid_side"]) ** 2
+	for bomb_index in cell_count:
+		memory_cell_state_changed.emit(bomb_index, target_state)
+
+
+func _reset_special_mode_runtime() -> void:
+	_mode_phase_remaining = 0.0
+	_phase_before_pause = get_current_mode_definition().initial_phase_name
+	_memory_pattern.clear()
+	_memory_previous_pattern.clear()
+	_memory_revealed.clear()
+	_memory_completion_visible = false
+
+
+func _get_mode_progress() -> int:
+	return current_score if current_mode_id == "memory" else current_defusals
+
+
+func _get_stage_definitions() -> Array[GameStageDefinition]:
+	var definition := get_current_mode_definition()
+	return definition.stages if definition != null else []
+
+
+func _advance_run_timer(delta: float) -> bool:
+	var total_seconds := get_current_mode_definition().run_duration_seconds
+	if total_seconds <= 0.0:
+		return false
+	_run_time_remaining = maxf(_run_time_remaining - maxf(delta, 0.0), 0.0)
+	run_timer_changed.emit(_run_time_remaining, total_seconds)
+	if _run_time_remaining <= 0.0:
+		finish_run("time_up")
+		return true
+	return false
+
+
+func _set_mode_phase(phase_name: String) -> void:
+	var safe_name := phase_name.strip_edges().to_upper()
+	if safe_name.is_empty() or _mode_phase_name == safe_name:
+		return
+	_mode_phase_name = safe_name
+	mode_phase_changed.emit(_mode_phase_name, _run_time_remaining)

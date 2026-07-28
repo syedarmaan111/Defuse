@@ -148,17 +148,60 @@ text = "Default Bomb"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="StatsGrid" type="GridContainer" parent="SafeMargins/Content/Scroll/ProfileContent"]
+[node name="ModeRecordsTitle" type="Label" parent="SafeMargins/Content/Scroll/ProfileContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.38, 0.37, 0.34, 1)
+theme_override_font_sizes/font_size = 22
+text = "MODE RECORDS"
+horizontal_alignment = 1
+
+[node name="ModeRecordsGrid" type="GridContainer" parent="SafeMargins/Content/Scroll/ProfileContent"]
 layout_mode = 2
 theme_override_constants/h_separation = 18
 theme_override_constants/v_separation = 18
 columns = 2
 
-[node name="BestScoreCard" parent="SafeMargins/Content/Scroll/ProfileContent/StatsGrid" instance=ExtResource("2_stat")]
+[node name="BestScoreCard" parent="SafeMargins/Content/Scroll/ProfileContent/ModeRecordsGrid" instance=ExtResource("2_stat")]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-title = "BEST SCORE"
+title = "CLASSIC"
+
+[node name="ZenBestCard" parent="SafeMargins/Content/Scroll/ProfileContent/ModeRecordsGrid" instance=ExtResource("2_stat")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+title = "ZEN"
+
+[node name="MemoryBestCard" parent="SafeMargins/Content/Scroll/ProfileContent/ModeRecordsGrid" instance=ExtResource("2_stat")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+title = "MEMORY"
+
+[node name="TimeAttackBestCard" parent="SafeMargins/Content/Scroll/ProfileContent/ModeRecordsGrid" instance=ExtResource("2_stat")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+title = "TIME ATTACK"
+
+[node name="PrecisionBestCard" parent="SafeMargins/Content/Scroll/ProfileContent/ModeRecordsGrid" instance=ExtResource("2_stat")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+title = "PRECISION"
+
+[node name="HardcoreBestCard" parent="SafeMargins/Content/Scroll/ProfileContent/ModeRecordsGrid" instance=ExtResource("2_stat")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+title = "HARDCORE"
+
+[node name="StatsGrid" type="GridContainer" parent="SafeMargins/Content/Scroll/ProfileContent"]
+layout_mode = 2
+theme_override_constants/h_separation = 18
+theme_override_constants/v_separation = 18
+columns = 2
 
 [node name="LifetimeCard" parent="SafeMargins/Content/Scroll/ProfileContent/StatsGrid" instance=ExtResource("2_stat")]
 unique_name_in_owner = true

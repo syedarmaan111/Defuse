@@ -6,6 +6,7 @@ extends Node
 ## Godot calls this script when the main scene starts.
 
 @onready var home_screen: Control = $ScreenRoot/HomeScreen
+@onready var mode_select_screen: Control = $ScreenRoot/ModeSelectScreen
 @onready var shop_screen: Control = $ScreenRoot/ShopScreen
 @onready var profile_screen: Control = $ScreenRoot/ProfileScreen
 @onready var settings_screen: Control = $ScreenRoot/SettingsScreen
@@ -40,9 +41,19 @@ func _ready() -> void:
 
 
 func _notification(what: int) -> void:
-	## Android sends this notification for the system navigation Back button.
-	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+	## Android pauses the active run when the player presses Home or switches
+	## apps, even though the process remains alive in the background.
+	if what == NOTIFICATION_APPLICATION_PAUSED:
+		_pause_active_game_when_backgrounded()
+	elif what == NOTIFICATION_WM_GO_BACK_REQUEST:
 		_handle_mobile_back()
+
+
+func _pause_active_game_when_backgrounded() -> void:
+	if not is_node_ready():
+		return
+	if GameManager.get_current_screen_name() == "gameplay":
+		GameManager.pause_game()
 
 
 func _handle_mobile_back() -> void:
@@ -55,6 +66,9 @@ func _handle_mobile_back() -> void:
 		return
 	if GameManager.get_current_screen_name() == "gameplay":
 		GameManager.pause_game()
+		return
+	if GameManager.get_current_screen_name() == "mode_select":
+		GameManager.return_to_home()
 		return
 	if (
 		GameManager.get_current_screen_name() == "home"
@@ -73,13 +87,14 @@ func _on_screen_changed(screen_name: String) -> void:
 	## Shows one base screen and optional overlay based on GameManager state.
 	## Pause and Game Over keep gameplay visible behind their popups.
 	_refresh_menu_screens(screen_name == "home")
+	mode_select_screen.visible = screen_name == "mode_select"
 	gameplay_screen.visible = screen_name in ["gameplay", "pause", "game_over"]
 	network_required_screen.visible = screen_name == "network_required"
 	sign_in_screen.visible = screen_name == "sign_in"
 	pause_menu.visible = screen_name == "pause"
 	game_over_screen.visible = screen_name == "game_over"
 	NetworkManager.set_gameplay_active(screen_name in ["gameplay", "pause"])
-	if screen_name in ["home", "network_required", "sign_in"]:
+	if screen_name in ["home", "mode_select", "network_required", "sign_in"]:
 		connection_status_overlay.visible = false
 	if screen_name == "sign_in" and not CloudSaveManager.is_authentication_pending():
 		if CloudSaveManager.is_signed_in() and not CloudSaveManager.is_restore_ready():
@@ -120,7 +135,7 @@ func _present_pending_power_up_choice() -> void:
 func _refresh_launch_gate() -> void:
 	## Re-evaluates launch state without interrupting a run already in progress.
 	var current_screen := GameManager.get_current_screen_name()
-	if current_screen in ["gameplay", "pause", "game_over"]:
+	if current_screen in ["gameplay", "pause", "game_over", "mode_select"]:
 		_on_screen_changed(current_screen)
 		return
 	if (

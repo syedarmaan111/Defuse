@@ -1,0 +1,49 @@
+[gd_resource type="Resource" script_class="GameModeDefinition" format=3 uid="uid://dvsoixkaexrc1"]
+
+[ext_resource type="Script" uid="uid://dtcb4wlvhwvkb" path="res://Scripts/Data/game_mode_definition.gd" id="1_mode"]
+[ext_resource type="Script" uid="uid://cn72b7m7ase5k" path="res://Scripts/Data/game_stage_definition.gd" id="2_stage"]
+
+[sub_resource type="Resource" id="Stage_precision_1"]
+script = ExtResource("2_stage")
+timer_seconds = 1.3
+
+[sub_resource type="Resource" id="Stage_precision_2"]
+script = ExtResource("2_stage")
+stage_number = 2
+active_bombs = 2
+timer_seconds = 1.125
+starts_at = 10
+
+[sub_resource type="Resource" id="Stage_precision_3"]
+script = ExtResource("2_stage")
+stage_number = 3
+grid_side = 3
+active_bombs = 2
+timer_seconds = 0.975
+starts_at = 25
+
+[sub_resource type="Resource" id="Stage_precision_4"]
+script = ExtResource("2_stage")
+stage_number = 4
+grid_side = 3
+active_bombs = 3
+timer_seconds = 0.85
+starts_at = 45
+
+[sub_resource type="Resource" id="Stage_precision_5"]
+script = ExtResource("2_stage")
+stage_number = 5
+grid_side = 4
+active_bombs = 3
+timer_seconds = 0.75
+starts_at = 70
+
+[resource]
+script = ExtResource("1_mode")
+mode_id = "precision"
+display_name = "Precision"
+rules_summary = "Clear each complete wave before its fast timers expire, then catch your breath before the next."
+score_label = "LEVEL"
+unlock_lifetime_defusals = 1000
+power_ups_enabled = false
+stages = Array[ExtResource("2_stage")]([SubResource("Stage_precision_1"), SubResource("Stage_precision_2"), SubResource("Stage_precision_3"), SubResource("Stage_precision_4"), SubResource("Stage_precision_5")])

@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="GameModeDefinition" format=3 uid="uid://b8g14q6co5wly"]
+
+[ext_resource type="Script" uid="uid://dtcb4wlvhwvkb" path="res://Scripts/Data/game_mode_definition.gd" id="1_mode"]
+[ext_resource type="Script" uid="uid://cn72b7m7ase5k" path="res://Scripts/Data/game_stage_definition.gd" id="2_stage"]
+
+[sub_resource type="Resource" id="Stage_zen_1"]
+script = ExtResource("2_stage")
+
+[sub_resource type="Resource" id="Stage_zen_2"]
+script = ExtResource("2_stage")
+stage_number = 2
+active_bombs = 2
+starts_at = 10
+
+[sub_resource type="Resource" id="Stage_zen_3"]
+script = ExtResource("2_stage")
+stage_number = 3
+grid_side = 3
+active_bombs = 2
+starts_at = 25
+
+[sub_resource type="Resource" id="Stage_zen_4"]
+script = ExtResource("2_stage")
+stage_number = 4
+grid_side = 3
+active_bombs = 3
+starts_at = 45
+
+[sub_resource type="Resource" id="Stage_zen_5"]
+script = ExtResource("2_stage")
+stage_number = 5
+grid_side = 4
+active_bombs = 3
+starts_at = 70
+
+[resource]
+script = ExtResource("1_mode")
+mode_id = "zen"
+display_name = "Zen"
+rules_summary = "A steady 2.60-second rhythm across every stage. Three lives, Gems, and power-ups remain."
+unlock_lifetime_defusals = 500
+stages = Array[ExtResource("2_stage")]([SubResource("Stage_zen_1"), SubResource("Stage_zen_2"), SubResource("Stage_zen_3"), SubResource("Stage_zen_4"), SubResource("Stage_zen_5")])

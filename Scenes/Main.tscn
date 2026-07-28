@@ -15,6 +15,7 @@
 [ext_resource type="PackedScene" path="res://Scenes/UI/PowerUpUnlockOverlay.tscn" id="12_power_unlock"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/PrePlayCountdownOverlay.tscn" id="13_countdown"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/SettingsScreen.tscn" id="14_settings"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/ModeSelectScreen.tscn" id="15_modes"]
 
 [node name="Main" type="Node" unique_id=96707744]
 script = ExtResource("1_script")
@@ -22,6 +23,9 @@ script = ExtResource("1_script")
 [node name="ScreenRoot" type="CanvasLayer" parent="." unique_id=1188427095]
 
 [node name="HomeScreen" parent="ScreenRoot" unique_id=51571482 instance=ExtResource("1_home")]
+visible = false
+
+[node name="ModeSelectScreen" parent="ScreenRoot" unique_id=1791675584 instance=ExtResource("15_modes")]
 visible = false
 
 [node name="ShopScreen" parent="ScreenRoot" unique_id=1816676946 instance=ExtResource("9_shop")]

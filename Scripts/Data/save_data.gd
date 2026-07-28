@@ -4,13 +4,29 @@ class_name SaveData
 ## SaveData is the validated, versioned progression record shared by local and
 ## cloud persistence. Stable IDs keep future catalog additions migration-safe.
 
-const CURRENT_VERSION := 2
+const CURRENT_VERSION := 3
 const DEFAULT_SKIN_ID := "default_bomb"
+const MODE_IDS: Array[String] = [
+	"endless",
+	"zen",
+	"memory",
+	"time_attack",
+	"precision",
+	"hardcore",
+]
 
 var save_version: int = CURRENT_VERSION
 var save_revision: int = 0
 var modified_at_unix: int = 0
 var best_score: int = 0
+var best_scores_by_mode: Dictionary = {
+	"endless": 0,
+	"zen": 0,
+	"memory": 0,
+	"time_attack": 0,
+	"precision": 0,
+	"hardcore": 0,
+}
 var lifetime_defusal_score: int = 0
 var currencies: Dictionary = {"gems": 0}
 var owned_skin_ids: Array[String] = [DEFAULT_SKIN_ID]
@@ -34,7 +50,14 @@ static func from_dictionary(source: Dictionary) -> SaveData:
 
 	data.save_revision = _non_negative_int(migrated.get("save_revision", 0))
 	data.modified_at_unix = _non_negative_int(migrated.get("modified_at_unix", 0))
-	data.best_score = _non_negative_int(migrated.get("best_score", 0))
+	data.best_scores_by_mode = _mode_score_dictionary(
+		migrated.get("best_scores_by_mode", {})
+	)
+	data.best_scores_by_mode["endless"] = maxi(
+		int(data.best_scores_by_mode["endless"]),
+		_non_negative_int(migrated.get("best_score", 0))
+	)
+	data.best_score = int(data.best_scores_by_mode["endless"])
 	data.lifetime_defusal_score = _non_negative_int(
 		migrated.get("lifetime_defusal_score", 0)
 	)
@@ -95,7 +118,9 @@ func to_dictionary(include_local_state: bool = true) -> Dictionary:
 		"save_version": CURRENT_VERSION,
 		"save_revision": save_revision,
 		"modified_at_unix": modified_at_unix,
-		"best_score": best_score,
+		# Keep the legacy key as a permanent Endless compatibility alias.
+		"best_score": int(best_scores_by_mode.get("endless", best_score)),
+		"best_scores_by_mode": best_scores_by_mode.duplicate(true),
 		"lifetime_defusal_score": lifetime_defusal_score,
 		"currencies": currencies.duplicate(true),
 		"owned_skin_ids": owned_skin_ids.duplicate(),
@@ -130,6 +155,15 @@ static func _migrate_legacy_dictionary(source: Dictionary) -> Dictionary:
 			migrated["owned_skin_ids"] = [DEFAULT_SKIN_ID]
 			if legacy_skin != DEFAULT_SKIN_ID:
 				migrated["owned_skin_ids"].append(legacy_skin)
+	if source_version < 3:
+		var endless_best := _non_negative_int(migrated.get("best_score", 0))
+		var mode_scores = migrated.get("best_scores_by_mode", {})
+		if typeof(mode_scores) != TYPE_DICTIONARY:
+			mode_scores = {}
+		else:
+			mode_scores = mode_scores.duplicate(true)
+		mode_scores["endless"] = endless_best
+		migrated["best_scores_by_mode"] = mode_scores
 
 	migrated["save_version"] = CURRENT_VERSION
 	return migrated
@@ -183,4 +217,19 @@ static func _quantity_dictionary(value: Variant) -> Dictionary:
 		var quantity := _non_negative_int(value[key])
 		if quantity > 0:
 			result[key] = quantity
+	return result
+
+
+static func _mode_score_dictionary(value: Variant) -> Dictionary:
+	var result := {}
+	for mode_id in MODE_IDS:
+		result[mode_id] = 0
+	if typeof(value) != TYPE_DICTIONARY:
+		return result
+	for mode_id in MODE_IDS:
+		if not value.has(mode_id):
+			continue
+		var score = value[mode_id]
+		if typeof(score) in [TYPE_INT, TYPE_FLOAT]:
+			result[mode_id] = max(int(score), 0)
 	return result
